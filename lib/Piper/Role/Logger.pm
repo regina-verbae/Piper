@@ -38,7 +38,7 @@ sub INFO {
 
 sub DEBUG {
     my $self = shift;
-    return unless $self->debug or $self->verbse > 1;
+    return unless $self->debug or $self->verbose > 1;
     $self->_info(@_);
 }
 
