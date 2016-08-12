@@ -26,10 +26,10 @@ requires 'stringify';
 #subsumes path("foo/bar")->subsumes("foo/bar/baz"); # true
 #resolve ./..?
 
-sub exists_in {
-    my ($path, $instance) = @_;
-    return 0 unless $instance->can('directory');
-    return exists $instance->directory->{$path} ? 1 : 0;
-}
+#sub exists_in {
+    #my ($path, $instance) = @_;
+    #return 0 unless $instance->can('directory');
+    #return exists $instance->directory->{$path} ? 1 : 0;
+#}
 
 1;

@@ -42,7 +42,7 @@ has filter => (
 );
 
 has enabled => (
-    is => 'rwp',
+    is => 'rw',
     isa => Bool,
     default => 1,
 );

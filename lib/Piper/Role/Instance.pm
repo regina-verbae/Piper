@@ -21,31 +21,6 @@ requires 'process_batch';
 
 # Metric for "how full" the pending queue is
 requires 'pressure';
-#
-## Only recalculate when unfrozen
-#around pressure => sub {
-    #my ($orig, $self) = @_;
-    #state $pressure;
-    #unless ($self->frozen('pressure') or !defined $pressure) {
-        #$pressure = $self->$orig();
-    #}
-#};
-#
-#around pending => sub {
-    #my ($orig, $self) = @_;
-    #state $pending;
-    #if ($self->frozen('pending') or !defined $pending) {
-        #$pending = $self->$orig();
-    #}
-    #return $pending;
-#};
-#
-#sub frozen {
-    #my ($self, $type) = @_;
-    #return $self->has_parent
-        #? $self->parent->freeze->{$type}
-        #: $self->freeze->{$type};
-#);
 
 has args => (
     is => 'rwp',
@@ -137,6 +112,38 @@ sub isnt_exhausted {
     }
 
     return $self->ready ? 1 : 0;
-}    
+}
+
+sub find_segment {
+    my ($self, $location) = @_;
+    
+    $location = Piper::Path->new($location);
+    my $parent = $self;
+    my $segment = $parent->descendant($location);
+    while (!defined $segment and $parent->has_parent) {
+        $parent = $parent->parent;
+        $segment = $parent->descendant($location);
+    }
+
+    return $segment;
+}
+
+sub descendant {
+    my ($self, $path) = @_;
+
+    my @pieces = @{$path->path};
+    while (@pieces) {
+        if ($self->can('directory')
+                and exists $self->directory->{$pieces[0]}
+        ) {
+            $self = $self->directory->{$pieces[0]};
+            shift @pieces;
+        }
+        else {
+            return;
+        }
+    }
+    return $self;
+}
 
 1;

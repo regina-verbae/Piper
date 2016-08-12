@@ -61,10 +61,10 @@ around BUILDARGS => sub {
             push @pieces, @{$part->path};
         }
         elsif (ref $part eq 'ARRAY') {
-            push @pieces, @$part;
+            push @pieces, map { split('/', $_) } @$part;
         }
         else {
-            push @pieces, $part;
+            push @pieces, split('/', $part);
         }
     }
     return $self->$orig(
