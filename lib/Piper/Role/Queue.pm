@@ -19,11 +19,15 @@ This role requires the following object methods.
 
 Removes and returns $num items from the queue.
 
-Default $num should be 1 if not provided.
-
 =cut
 
 requires 'dequeue';
+
+around dequeue => sub {
+    my ($orig, $self, $num) = @_;
+    $num //= 1;
+    $self->$orig($num);
+};
 
 =head2 enqueue(@items)
 

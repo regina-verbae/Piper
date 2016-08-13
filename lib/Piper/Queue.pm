@@ -30,14 +30,13 @@ has queue => (
 
 =head2 dequeue($num)
 
-Remove and return $num items from the queue.  If
-$num not provided, defaults to 1.
+Remove and return $num items from the queue.
 
 =cut
 
 sub dequeue {
     my ($self, $num) = @_;
-    splice @{$self->queue}, 0, $num // 1;
+    splice @{$self->queue}, 0, $num;
 }
 
 =head2 enqueue(@items)
