@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: 
+## ABSTRACT: Role for logging/messaging from Piper
 #####################################################################
 
 package Piper::Role::Logger;
@@ -13,57 +13,110 @@ use Types::Common::Numeric qw(PositiveOrZeroNum);
 
 use Moo::Role;
 
+=head1 ATTRIBUTES
+
+=head2 debug, verbose
+
+May be a positive integer or zero, though there are
+currently only two debug and two verbosity levels,
+so 0, 1, or 2 will suffice.
+
+These attributes will be set upon initialization of
+a Piper object based on any debug/verbose values
+provided via the Piper object's options during
+construction.
+
+Alternatively, these can be set manually at any time
+after initialization with $self->verbose($val) or
+$self->debug($val).
+
+Both attributes have an environment variable override
+which can be used to trump the values set by a program.
+
+    $ENV{PIPER_VERBOSE}
+    $ENV{PIPER_DEBUG}
+
+=cut
+
 has verbose => (
     is => 'rw',
     isa => PositiveOrZeroNum,
+    coerce => sub {
+        # Environment variable always wins
+        my $value = shift;
+        return $ENV{PIPER_VERBOSE} // $value;
+    },
     default => 0,
 );
 
 has debug => (
     is => 'rw',
     isa => PositiveOrZeroNum,
+    coerce => sub {
+        # Environment variable always wins
+        my $value = shift;
+        return $ENV{PIPER_DEBUG} // $value;
+    },
     default => 0,
 );
 
-sub _info {
-    my $self = shift;
-    warn 'Info: '.$self->_make_message(@_)."\n";
-}
+=head1 REQUIRES
 
-sub INFO {
-    my $self = shift;
+This role requires the definition of the following
+methods.
+
+Each method will be provided the following arguments:
+
+  $segment  # The pipeline segment calling the method
+  $message  # The (string) message sent
+  @items    # Any specific items the message is about
+
+=head2 INFO
+
+This method is only called if verbose > 0 or debug > 0.
+
+=cut
+
+requires 'INFO';
+
+around INFO => sub {
+    my ($orig, $self) = splice @_, 0, 2;
     return unless $self->verbose or $self->debug;
-    $self->_info(@_);
-}
+    $self->$orig(@_);
+};
 
-sub DEBUG {
-    my $self = shift;
-    return unless $self->debug or $self->verbose > 1;
-    $self->_info(@_);
-}
+=head2 DEBUG
 
-sub WARN {
-    my $self = shift;
-    Carp::carp('Warning: '.$self->_make_message(@_));
-}
+This method is only called if debug > 0.
 
-sub ERROR {
-    my $self = shift;
-    Carp::croak('Error: '.$self->_make_message(@_));
-}
+=cut
 
-sub _make_message {
-    my ($self, $segment, $message, @items) = @_;
+requires 'DEBUG';
 
-    $message = ($self->verbose ? $segment->path : $segment->label)
-        . ($self->debug > 1 ? ' (' . $segment->id . '): ' : ': ')
-        . $message;
+around DEBUG => sub {
+    my ($orig, $self) = splice @_, 0, 2;
+    return unless $self->debug;
+    $self->$orig(@_);
+};
 
-    if (@items) {
-        $message .= ' <'.join(',', @items).'>';
-    }
+=head2 WARN
 
-    return $message;
-}
+=cut
+
+requires 'WARN';
+
+=head2 ERROR
+
+The method may cause a die, though it will do so
+automatically if not done explicitly, though with
+an extremely generic and unhelpful message.
+
+=cut
+
+requires 'ERROR';
+
+after ERROR => sub {
+    die "ERROR encountered";
+};
 
 1;
