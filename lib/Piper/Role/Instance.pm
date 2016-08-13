@@ -18,6 +18,8 @@ use Moo::Role;
 
 with qw(Piper::Role::Queue);
 
+requires 'pending';
+
 requires 'process_batch';
 
 # Metric for "how full" the pending queue is

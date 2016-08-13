@@ -5,7 +5,6 @@
 
 package Piper::Process::Instance;
 
-use Piper::Path;
 use Piper::Queue;
 use Types::Standard qw(InstanceOf);
 
@@ -29,8 +28,8 @@ sub process_batch {
     my ($self) = @_;
 
     my $num = $self->get_batch_size;
-    #my $parent = $self->has_parent ? $self->parent : $self;
     $self->DEBUG("Processing batch with max size", $num);
+
 
     my @batch = $self->queue->dequeue($num);
     $self->INFO("Processing batch", @batch);
@@ -57,7 +56,10 @@ BEGIN {
         is => 'lazy',
         isa => InstanceOf['Piper::Queue'],
         builder => sub { Piper::Queue->new() },
-        handles => [qw(enqueue pending)],
+        handles => {
+            enqueue => 'enqueue',
+            pending => 'ready',
+        },
     );
 
     has drain => (
