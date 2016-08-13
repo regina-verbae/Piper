@@ -32,7 +32,7 @@ sub init {
     my $instance = Piper::Instance->new(
         pipe => $self,
         children => [
-            map { $_->init(@_) } grep { $_->enabled } @{$self->children}
+            map { $_->init(@_) } @{$self->children}
         ],
     );
 

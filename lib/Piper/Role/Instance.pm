@@ -8,6 +8,7 @@ package Piper::Role::Instance;
 use v5.22;
 use warnings;
 
+use List::AllUtils qw(part);
 use Piper::Logger;
 use Piper::Path;
 use Types::Standard qw(ArrayRef ConsumerOf InstanceOf Str);
@@ -40,6 +41,19 @@ has parent => (
     required => 0,
     predicate => 1,
 );
+
+sub is_enabled {
+    my ($self) = @_;
+
+    return 0 if !$self->enabled;
+    # Check all the parents...
+    my $par = $self;
+    while ($par->has_parent) {
+        $par = $par->parent;
+        return 0 if !$par->enabled;
+    }
+    return 1;
+}
 
 has main => (
     is => 'lazy',
@@ -145,5 +159,38 @@ sub descendant {
     }
     return $self;
 }
+
+around enqueue => sub {
+    my ($orig, $self, @args) = @_;
+
+    if (!$self->is_enabled) {
+        # Bypass - go straight to drain
+        $self->INFO("Skipping disabled process", @args);
+        $self->drain->enqueue(@args);
+        return;
+    }
+
+    my @items;
+    if ($self->has_filter) {
+        my ($skip, $queue) = part {
+            $self->filter->($_)
+        } @args;
+
+        @items = @$queue if defined $queue;
+
+        if (defined $skip) {
+            $self->INFO("Filtered items to next handler", @$skip);
+            $self->drain->enqueue(@$skip);
+        }
+    }
+    else {
+        @items = @args;
+    }
+
+    return unless @items;
+
+    $self->INFO("Queueing items", @items);
+    $self->$orig(@items);
+};
 
 1;

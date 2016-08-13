@@ -5,7 +5,6 @@
 
 package Piper::Process::Instance;
 
-use List::AllUtils qw(part);
 use Piper::Path;
 use Piper::Queue;
 use Types::Standard qw(InstanceOf);
@@ -58,7 +57,7 @@ BEGIN {
         is => 'lazy',
         isa => InstanceOf['Piper::Queue'],
         builder => sub { Piper::Queue->new() },
-        handles => [qw(pending)],
+        handles => [qw(enqueue pending)],
     );
 
     has drain => (
@@ -67,29 +66,6 @@ BEGIN {
         builder => sub { Piper::Queue->new() },
         handles => [qw(dequeue ready)],
     );
-}
-
-sub enqueue {
-    my $self = shift;
-    my @args;
-    if ($self->has_filter) {
-        my ($skip, $queue) = part {
-            $self->filter->($_)
-        } @_;
-        @args = @$queue if defined $queue;
-        if (defined $skip) {
-            $self->INFO("Filtered items to next handler", @$skip);
-            $self->emit(@$skip);
-        }
-    }
-    else {
-        @args = @_;
-    }
-
-    return unless @args;
-
-    $self->INFO("Queueing items", @args);
-    $self->queue->enqueue(@args);
 }
 
 sub emit {

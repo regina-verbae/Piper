@@ -5,7 +5,7 @@
 
 package Piper::Instance;
 
-use List::AllUtils qw(last_value max part sum);
+use List::AllUtils qw(last_value max sum);
 use List::UtilsBy qw(max_by);
 use Piper::Queue;
 use Types::Standard qw(ArrayRef ConsumerOf HashRef InstanceOf Str);
@@ -48,25 +48,7 @@ BEGIN {
 
 sub enqueue {
     my $self = shift;
-    my @args;
-    if ($self->has_filter) {
-        my ($skip, $queue) = part {
-            $self->filter->($_)
-        } @_;
-        @args = @$queue if defined $queue;
-        if (defined $skip) {
-            $self->INFO("Filtered items to next handler", @$skip);
-            $self->emit(@$skip);
-        }
-    }
-    else {
-        @args = @_;
-    }
-
-    return unless @args;
-
-    $self->INFO("Queueing items", @args);
-    $self->children->[0]->enqueue(@args);
+    $self->children->[0]->enqueue(@_);
 }
 
 sub pending {
