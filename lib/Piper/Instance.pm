@@ -94,11 +94,6 @@ sub _build_directory {
     return \%dir;
 }
 
-sub find {
-    my ($self, $path) = @_;
-
-}
-
 has follower => (
     is => 'lazy',
     isa => HashRef,
