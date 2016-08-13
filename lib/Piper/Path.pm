@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: 
+## ABSTRACT: Simple path object for labeling locations in pipelines
 #####################################################################
 
 package Piper::Path;
@@ -22,35 +22,16 @@ has path => (
     isa => ArrayRef[Str],
 );
 
-sub stringify {
-    my ($self) = @_;
-    return join('/', @{$self->path});
-}
+=head1 CONSTRUCTOR
 
-sub name {
-    my ($self) = @_;
-    return $self->path->[-1];
-}
+=head2 new(@segments)
 
-sub child {
-    my $self = shift;
-    return $self->new($self, @_);
-}
+Ex:
+    new(qw(grandparent parent child))
+    new(qw(grandparent/parent child))
+    new($parent_path_object, qw(child))
 
-sub sibling {
-    my $self = shift;
-    my @pieces = @{$self->path};
-    splice @pieces, -1, 1, @_;
-    return $self->new(@pieces);
-}
-
-sub parent {
-    my ($self, $num) = @_;
-    $num //= 1;
-    my @pieces = @{$self->path};
-    splice @pieces, -$num;
-    return $self->new(@pieces);
-}
+=cut
 
 around BUILDARGS => sub {
     my ($orig, $self, @args) = @_;
@@ -58,7 +39,7 @@ around BUILDARGS => sub {
     my @pieces;
     for my $part (@args) {
         if (eval { $part->isa('Piper::Path') }) {
-            push @pieces, @{$part->path};
+            push @pieces, $part->split;
         }
         elsif (ref $part eq 'ARRAY') {
             push @pieces, map { split('/', $_) } @$part;
@@ -71,5 +52,66 @@ around BUILDARGS => sub {
         path => [ @pieces ],
     );
 };
+
+=head1 METHODS
+
+=head2 child(@segments)
+
+Returns a new path object representing the appropriate
+child of $self.
+
+    $path                     # grampa/parent
+    $path->child(qw(child))   # grampa/parent/child
+
+=cut
+
+sub child {
+    my $self = shift;
+    return $self->new($self, @_);
+}
+
+=head2 name
+
+Returns the last segment of the path, or the 'basename'.
+
+    $path         # foo/bar/baz
+    $path->name   # baz
+
+=cut
+
+sub name {
+    my ($self) = @_;
+    return $self->path->[-1];
+}
+
+=head2 split
+
+Returns an array of the path segments.
+
+    $path          # foo/bar/baz
+    $path->split   # qw(foo bar baz)
+
+=cut
+
+sub split {
+    my ($self) = @_;
+    return @{$self->path};
+}
+
+=head2 stringify
+
+Returns a string representation of the path, which is
+simply a join of the path segments with '/'.
+
+Note: String context is overloaded to call this method.
+
+    "$path"  is equivalent to $path->stringify
+
+=cut
+
+sub stringify {
+    my ($self) = @_;
+    return join('/', @{$self->path});
+}
 
 1;

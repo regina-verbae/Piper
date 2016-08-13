@@ -147,7 +147,7 @@ sub find_segment {
 sub descendant {
     my ($self, $path) = @_;
 
-    my @pieces = @{$path->path};
+    my @pieces = $path->split;
     while (@pieces) {
         if ($self->can('directory')
                 and exists $self->directory->{$pieces[0]}
