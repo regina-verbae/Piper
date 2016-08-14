@@ -3,25 +3,32 @@
 ## ABSTRACT: 
 #####################################################################
 
-package Piper::Process::Instance;
+package Piper::Role::Instance::Process;
 
+use v5.22;
+use warnings;
+
+use Piper::Path;
 use Piper::Queue;
 use Types::Standard qw(InstanceOf);
 
-use Moo;
-
-with qw(Piper::Role::Instance);
-
-use overload (
-    q{""} => sub { $_[0]->path },
-    fallback => 1,
-);
+use Moo::Role;
 
 has process => (
     is => 'ro',
     isa => InstanceOf['Piper::Process'],
     handles => 'Piper::Role::Segment',
     required => 1,
+);
+
+has queue => (
+    is => 'lazy',
+    isa => InstanceOf['Piper::Queue'],
+    builder => sub { Piper::Queue->new() },
+    handles => {
+        enqueue => 'enqueue',
+        pending => 'ready',
+    },
 );
 
 sub process_batch {
@@ -49,25 +56,6 @@ sub process_batch {
 sub pressure {
     my ($self) = @_;
     return $self->pending - $self->get_batch_size;
-}
-
-BEGIN {
-    has queue => (
-        is => 'lazy',
-        isa => InstanceOf['Piper::Queue'],
-        builder => sub { Piper::Queue->new() },
-        handles => {
-            enqueue => 'enqueue',
-            pending => 'ready',
-        },
-    );
-
-    has drain => (
-        is => 'lazy',
-        isa => InstanceOf['Piper::Queue'],
-        builder => sub { Piper::Queue->new() },
-        handles => [qw(dequeue ready)],
-    );
 }
 
 sub emit {

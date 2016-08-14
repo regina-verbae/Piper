@@ -8,41 +8,19 @@ package Piper;
 use v5.16;
 use warnings;
 
-use Piper::Instance;
 use Piper::Process;
-use Types::Standard qw(ArrayRef ConsumerOf);
 
 use Moo;
 
-with qw(Piper::Role::Segment);
+with qw(
+    Piper::Role::Segment
+    Piper::Role::Segment::Pipe
+);
 
 use overload (
     q{""} => sub { $_[0]->label },
     fallback => 1,
 );
-
-has children => (
-    is => 'rwp',
-    isa => ArrayRef[ConsumerOf['Piper::Role::Segment']],
-    required => 1,
-);
-
-sub init {
-    my $self = shift;
-    my $instance = Piper::Instance->new(
-        pipe => $self,
-        children => [
-            map { $_->init(@_) } @{$self->children}
-        ],
-    );
-
-    # Set parents for children
-    for my $child (@{$instance->children}) {
-        $child->_set_parent($instance);
-    }
-
-    return $instance;
-}
 
 sub default_batch_size {
     return 50;
@@ -72,7 +50,7 @@ around BUILDARGS => sub {
             $thing->_set_label($label) if $label;
             push @{$hash{children}}, $thing;
         }
-        elsif (eval { $thing->isa('Piper::Process::Instance') }) {
+        elsif (eval { $thing->isa('Piper::Instance::Process') }) {
             $thing = $thing->process;
             $thing->_set_label($label) if $label;
             push @{$hash{children}}, $thing;

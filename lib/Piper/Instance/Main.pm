@@ -3,7 +3,7 @@
 ## ABSTRACT: 
 #####################################################################
 
-package Piper::Instance;
+package Piper::Instance::Main;
 
 use v5.22;
 use warnings;
@@ -13,7 +13,7 @@ use Moo;
 with qw(
     Piper::Role::Instance
     Piper::Role::Instance::Pipe
-    Piper::Role::Instance::NotMain
+    Piper::Role::Instance::Main
 );
 
 use overload (

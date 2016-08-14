@@ -8,36 +8,22 @@ package Piper::Process;
 use v5.16;
 use warnings;
 
-use Piper::Process::Instance;
-use Types::Standard qw(CodeRef);
-
 use Moo;
 
-with qw(Piper::Role::Segment);
+with qw(
+    Piper::Role::Segment
+    Piper::Role::Segment::Process
+);
 
 use overload (
     q{""} => sub { $_[0]->label },
     fallback => 1,
 );
 
-has handler => (
-    is => 'ro',
-    isa => CodeRef,
-    required => 1,
-);
-
 sub _build_id {
     state $id = 0;
     $id++;
     return __PACKAGE__.$id;
-}
-
-sub init {
-    my ($self) = @_;
-
-    return Piper::Process::Instance->new(
-        process => $self,
-    );
 }
 
 around BUILDARGS => sub {

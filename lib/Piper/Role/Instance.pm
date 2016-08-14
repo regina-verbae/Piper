@@ -9,10 +9,9 @@ use v5.22;
 use warnings;
 
 use List::AllUtils qw(part);
-use Piper::Logger;
 use Piper::Path;
-use Types::Standard qw(ArrayRef ConsumerOf InstanceOf Str);
-use Types::Common::String qw(NonEmptySimpleStr);
+use Piper::Queue;
+use Types::Standard qw(ConsumerOf InstanceOf);
 
 use Moo::Role;
 
@@ -24,16 +23,6 @@ requires 'process_batch';
 
 # Metric for "how full" the pending queue is
 requires 'pressure';
-
-has args => (
-    is => 'rwp',
-    isa => ArrayRef,
-);
-
-has location => (
-    is => 'rw',
-    isa => Str,
-);
 
 has parent => (
     is => 'rwp',
@@ -57,21 +46,6 @@ sub is_enabled {
     return 1;
 }
 
-has main => (
-    is => 'lazy',
-    isa => ConsumerOf['Piper::Role::Instance'],
-    weak_ref => 1,
-);
-
-sub _build_main {
-    my ($self) = @_;
-    my $parent = $self;
-    while ($parent->has_parent) {
-        $parent = $parent->parent;
-    }
-    return $parent;
-}
-
 has path => (
     is => 'lazy',
     isa => InstanceOf['Piper::Path'],
@@ -84,25 +58,6 @@ sub _build_path {
         ? $self->parent->path->child($self->label)
         : Piper::Path->new($self->label);
 }
-
-has logger => (
-    is => 'lazy',
-    isa => ConsumerOf['Piper::Role::Logger'],
-    handles => 'Piper::Role::Logger',
-);
-
-sub _build_logger {
-    my ($self) = @_;
-
-    return $self->has_parent
-        ? $self->parent->logger
-        : Piper::Logger->new($self->has_extra ? $self->extra : ());
-}
-
-around [qw(INFO DEBUG WARN ERROR)] => sub {
-    my ($orig, $self) = splice @_, 0, 2;
-    $self->$orig($self, @_);
-};
 
 sub get_batch_size {
     my ($self) = @_;
@@ -130,11 +85,18 @@ sub isnt_exhausted {
     return $self->ready ? 1 : 0;
 }
 
+has drain => (
+    is => 'lazy',
+    isa => InstanceOf['Piper::Queue'],
+    builder => sub { Piper::Queue->new() },
+    handles => [qw(dequeue ready)],
+);
+
 sub find_segment {
     my ($self, $location) = @_;
     
     $location = Piper::Path->new($location);
-    my $parent = $self;
+    my $parent = $self->can('descendant') ? $self : $self->parent;
     my $segment = $parent->descendant($location);
     while (!defined $segment and $parent->has_parent) {
         $parent = $parent->parent;
@@ -142,24 +104,6 @@ sub find_segment {
     }
 
     return $segment;
-}
-
-sub descendant {
-    my ($self, $path) = @_;
-
-    my @pieces = $path->split;
-    while (@pieces) {
-        if ($self->can('directory')
-                and exists $self->directory->{$pieces[0]}
-        ) {
-            $self = $self->directory->{$pieces[0]};
-            shift @pieces;
-        }
-        else {
-            return;
-        }
-    }
-    return $self;
 }
 
 around enqueue => sub {
@@ -193,6 +137,19 @@ around enqueue => sub {
 
     $self->INFO("Queueing items", @items);
     $self->$orig(@items);
+};
+
+# Cute little trick to auto-insert the instance object
+# as first argument, since $self will become the logger
+# object and lose access to paths/labels/etc.
+around [qw(INFO DEBUG WARN ERROR)] => sub {
+    my ($orig, $self) = splice @_, 0, 2;
+    if (ref $_[0]) {
+        $self->$orig(@_);
+    }
+    else {
+        $self->$orig($self, @_);
+    }
 };
 
 1;

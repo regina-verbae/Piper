@@ -107,7 +107,7 @@ requires 'WARN';
 
 =head2 ERROR
 
-The method may cause a die, though it will do so
+The method should cause a die.  It will do so
 automatically if not done explicitly, though with
 an extremely generic and unhelpful message.
 

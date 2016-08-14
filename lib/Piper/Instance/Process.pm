@@ -3,7 +3,7 @@
 ## ABSTRACT: 
 #####################################################################
 
-package Piper::Instance;
+package Piper::Instance::Process;
 
 use v5.22;
 use warnings;
@@ -12,7 +12,7 @@ use Moo;
 
 with qw(
     Piper::Role::Instance
-    Piper::Role::Instance::Pipe
+    Piper::Role::Instance::Process
     Piper::Role::Instance::NotMain
 );
 

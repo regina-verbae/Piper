@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Role for pipeline segments
+## ABSTRACT: Base role for pipeline segments
 #####################################################################
 
 package Piper::Role::Segment;
@@ -8,7 +8,7 @@ package Piper::Role::Segment;
 use v5.22;
 use warnings;
 
-use Types::Standard qw(Bool CodeRef ConsumerOf HashRef Maybe);
+use Types::Standard qw(Bool CodeRef HashRef);
 use Types::Common::Numeric qw(PositiveInt);
 use Types::Common::String qw(NonEmptySimpleStr);
 
@@ -32,31 +32,11 @@ object.
 
 =cut
 
+#TODO remove this need
+
 requires '_build_id';
 
-=head2 init
-
-Must return an instance (that does the role of
-Piper::Role::Instance) of $self.
-
-=cut
-
-requires 'init';
-
-around init => sub {
-    my ($orig, $self, @args) = @_;
-
-    my $instance = $self->$orig();
-
-    # Now we have an instance, which has args
-    $instance->_set_args(\@args);
-
-    return $instance;
-};
-
 =head1 ATTRIBUTES
-
-Attributes with a * are required.
 
 =head2 batch_size
 
@@ -86,7 +66,7 @@ segment.
 =cut
 
 has filter => (
-    is => 'rwp',
+    is => 'ro',
     isa => CodeRef,
     predicate => 1,
 );
