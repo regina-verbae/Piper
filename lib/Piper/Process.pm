@@ -20,12 +20,6 @@ use overload (
     fallback => 1,
 );
 
-sub _build_id {
-    state $id = 0;
-    $id++;
-    return __PACKAGE__.$id;
-}
-
 around BUILDARGS => sub {
     my ($orig, $self, @args) = @_;
 

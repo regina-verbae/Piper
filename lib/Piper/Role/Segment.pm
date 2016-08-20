@@ -34,7 +34,7 @@ object.
 
 #TODO remove this need
 
-requires '_build_id';
+#requires '_build_id';
 
 =head1 ATTRIBUTES
 
@@ -98,6 +98,14 @@ has id => (
     isa => NonEmptySimpleStr,
     builder => 1,
 );
+
+sub _build_id {
+    my ($self) = @_;
+    state $id = {};
+    my $base = ref $self;
+    $id->{$base}++;
+    return "$base$id->{$base}";
+}
 
 =head2 label
 

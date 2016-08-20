@@ -26,12 +26,6 @@ sub default_batch_size {
     return 50;
 }
 
-sub _build_id {
-    state $id = 0;
-    $id++;
-    return __PACKAGE__.$id;
-}
-
 around BUILDARGS => sub {
     my ($orig, $self, @args) = @_;
 
