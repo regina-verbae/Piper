@@ -7,7 +7,6 @@
 use v5.22;
 use warnings;
 
-use Data::Printer;
 use Test::Most;
 
 my $APP = "Piper::Path";

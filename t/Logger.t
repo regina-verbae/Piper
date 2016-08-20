@@ -8,7 +8,6 @@ use v5.22;
 use warnings;
 
 use Capture::Tiny qw(capture_stderr);
-use Data::Printer;
 use Test::Most;
 
 my $APP = "Piper::Logger";
