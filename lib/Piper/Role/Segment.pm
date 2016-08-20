@@ -20,22 +20,6 @@ This role contains attributes and methods that apply
 to each pipeline segment, both individual handlers
 and sub-pipes.
 
-=head1 REQUIRES
-
-The following methods are required for objects that
-compose this role.
-
-=head2 _build_id
-
-Must return a globally uniq ID for the constructed
-object.
-
-=cut
-
-#TODO remove this need
-
-#requires '_build_id';
-
 =head1 ATTRIBUTES
 
 =head2 batch_size
