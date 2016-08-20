@@ -48,7 +48,7 @@ which can be used to trump the values set by a program.
 This method will be a no-op unless verbose > 0 or
 debug > 0.
 
-Prints an informational message to STDERR (via warn).
+Prints an informational message to STDERR.
 
 Uses the method make_message to format the printed
 message according to debug/verbose levels and the
@@ -61,14 +61,14 @@ formatted message.
 
 sub INFO {
     my $self = shift;
-    warn 'Info: '.$self->make_message(@_)."\n";
+    say STDERR 'Info: '.$self->make_message(@_);
 }
 
 =head2 DEBUG($segment, $message, @items)
 
 This method will be a no-op unless debug > 0.
 
-Prints an informational message to STDERR (via warn).
+Prints an informational message to STDERR.
 
 Uses the method make_message to format the printed
 message according to debug/verbose levels and the
