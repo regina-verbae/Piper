@@ -33,31 +33,12 @@ sub init {
 		],
 	);
 
-    if (_is_main()) {
-        # Set the args in the main instance
-        my @args = @_;
-        $instance->_set_args(\@args);
-    }
-
     # Set parents for children
     for my $child (@{$instance->children}) {
         $child->_set_parent($instance);
     }
 
     return $instance;
-}
-
-sub _is_main {
-    # This + role composition = skip 2
-    my $level = 2;
-    # For standard Piper, this is 'Piper::init'
-    my $current = (caller $level++)[3];
-    while (my $caller = (caller $level++)[3]) {
-        # If another Piper::init is in the call stack,
-        #   this cannot be the main pipeline.
-        return 0 if $caller eq $current;
-    }
-    return 1;
 }
 
 1;

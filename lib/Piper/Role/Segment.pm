@@ -122,4 +122,25 @@ has extra => (
     predicate => 1,
 );
 
+requires 'init';
+
+around init => sub {
+    my ($orig, $self, @args) = @_;
+    state $call = 0;
+    $call++;
+    my $main = $call == 1 ? 1 : 0;
+
+    my $instance = $self->$orig();
+
+    if ($main) {
+        # Set the args in the main instance
+        $instance->_set_args(\@args);
+
+        # Reset $call (global) for other objects
+        $call = 0;
+    }
+
+    return $instance;
+};
+
 1;
