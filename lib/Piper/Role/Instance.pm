@@ -130,7 +130,6 @@ around enqueue => sub {
     my @items;
     if ($self->has_filter) {
         my ($skip, $queue) = part {
-            # TODO: work on $_
             $self->filter->($_)
         } @args;
 

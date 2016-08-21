@@ -47,11 +47,30 @@ item will be queued.  Otherwise, the item will
 skip this segment and continue to the next adjacent
 segment.
 
+The item will be localized to $_, as well as
+passed in as the first argument.  These example
+filters are equivalent.
+
+    # This handler only accepts digit inputs
+    sub { /^\d+$/ }
+    sub { $_ =~ /^\d+$/ }
+    sub { $_[0] =~ /^\d+$/ }
+
 =cut
 
 has filter => (
     is => 'ro',
     isa => CodeRef,
+    # Closure to enable sub to use $_ instead of $_[0],
+    #   though $_[0] will also work
+    coerce => sub {
+        my $orig = shift;
+        return sub {
+            my $item = shift;
+            local $_ = $item;
+            $orig->($item);
+        };
+    },
     predicate => 1,
 );
 

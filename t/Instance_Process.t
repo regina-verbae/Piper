@@ -17,7 +17,8 @@ use Piper::Process;
 
 my $TEST = Piper::Process->new(half => {
     batch_size => 2,
-    filter => sub { $_[0] % 2 == 0 },
+    # Non-explicitly testing that filter $_ closure works
+    filter => sub { $_ % 2 == 0 },
     handler => sub {
         my ($instance, $batch, @args) = @_;
         return (map { int( $_ / 2 ) } @$batch);
@@ -194,6 +195,7 @@ my $TEST = Piper::Process->new(half => {
 
         my $RECYCLER = Piper::Process->new(mod_power_2 => {
             batch_size => 3,
+            # Non-explicitly testing that filter $_ closure still allows use of $_[0]
             filter => sub { $_[0] % 2 == 0 },
             handler => sub {
                 my ($instance, $batch, @args) = @_;
