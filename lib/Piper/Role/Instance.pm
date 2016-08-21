@@ -96,7 +96,17 @@ sub find_segment {
     my ($self, $location) = @_;
     
     $location = Piper::Path->new($location);
-    my $parent = $self->can('descendant') ? $self : $self->parent;
+    my $parent;
+    if ($self->can('descendent')) {
+        $parent = $self;
+    }
+    elsif ($self->has_parent) {
+        $parent = $self->parent;
+    }
+    else {
+        # Lonely Piper::Instance::Process
+        return "$self" eq "$location" ? $self : undef;
+    }
     my $segment = $parent->descendant($location);
     while (!defined $segment and $parent->has_parent) {
         $parent = $parent->parent;
@@ -119,6 +129,7 @@ around enqueue => sub {
     my @items;
     if ($self->has_filter) {
         my ($skip, $queue) = part {
+            # TODO: work on $_
             $self->filter->($_)
         } @args;
 
