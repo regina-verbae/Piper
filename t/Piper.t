@@ -27,6 +27,7 @@ my $SUCCESSFUL_NEW;
             'only scalars' => [garbage => 'not a process'],
             'arrayref' => [ [qw(garbage)] ],
             'missing required' => [ garbage => {} ],
+            'no children' => [],
         );
 
         for my $bad (keys %BADARGS) {

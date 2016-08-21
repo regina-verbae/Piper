@@ -10,7 +10,7 @@ use warnings;
 
 use List::AllUtils qw(last_value max sum);
 use List::UtilsBy qw(max_by min_by);
-use Types::Standard qw(ArrayRef ConsumerOf HashRef InstanceOf);
+use Types::Standard qw(ArrayRef ConsumerOf HashRef InstanceOf Tuple slurpy);
 
 use Moo::Role;
 
@@ -22,7 +22,10 @@ has pipe => (
 
 has children => (
     is => 'ro',
-    isa => ArrayRef[ConsumerOf['Piper::Role::Instance']],
+    # Force to contain at least one child
+    isa => Tuple[ConsumerOf['Piper::Role::Instance'],
+        slurpy ArrayRef[ConsumerOf['Piper::Role::Instance']]
+    ],
     required => 1,
 );
 
