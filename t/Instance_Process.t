@@ -289,6 +289,18 @@ my $TEST = Piper::Process->new(half => {
     };
 }
 
+# Test injectAfter
+{
+    subtest "$APP - injectAfter" => sub {
+        $TEST->injectAfter('half', 1..4);
+        is($TEST->ready, 4, 'ok');
+
+        throws_ok {
+            $TEST->injectAfter('bad', 1..4)
+        } qr/Could not find bad to injectAfter/, 'no injectAfter with bad label';
+    };
+}
+
 #####################################################################
 
 done_testing();

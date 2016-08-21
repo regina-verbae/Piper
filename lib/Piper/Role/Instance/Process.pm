@@ -93,4 +93,14 @@ sub injectAt {
     $segment->enqueue(@_);
 }
 
+sub injectAfter {
+    my $self = shift;
+    my $location = shift;
+    my $segment = $self->find_segment($location);
+    $self->ERROR("Could not find $location to injectAfter", @_)
+        if !defined $segment;
+    $self->INFO("Injecting after $location", @_);
+    $segment->drain->enqueue(@_);
+}
+
 1;
