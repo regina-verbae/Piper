@@ -33,29 +33,31 @@ my $QUEUE = Piper::Queue->new();
 {
     subtest "$APP - dequeue" => sub {
         is_deeply(
-           [ $QUEUE->dequeue ],
-           [ 1 ],
-           "dequeue default number"
-       );
+           	[ $QUEUE->dequeue(2) ],
+           	[ 1..2 ],
+           	"dequeue multiple"
+       	);
 
-       is_deeply(
-           [ $QUEUE->dequeue(3) ],
-           [ 2..4 ],
-           "dequeue multiple"
-       );
+       	is_deeply(
+        	[ $QUEUE->dequeue ],
+           	[ 3 ],
+           	"dequeue default - wantarray"
+       	);
 
-       is_deeply(
-           [ $QUEUE->dequeue(5) ],
-           [ 5 ],
-           "requested greater than ready"
-       );
+		is($QUEUE->dequeue, 4, "dequeue default - no wantarray");
 
-       is_deeply(
-           [ $QUEUE->dequeue ],
-           [ ],
-           "empty"
-       );
-   };
+       	is_deeply(
+           	[ $QUEUE->dequeue(5) ],
+           	[ 5 ],
+           	"requested greater than ready"
+       	);
+
+       	is_deeply(
+           	[ $QUEUE->dequeue ],
+           	[ ],
+           	"empty"
+       	);
+   	};
 }
 
 # Test ready
