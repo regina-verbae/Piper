@@ -81,6 +81,9 @@ say $seg;
 say "Find add_three from transform:";
 $seg = $inst->directory->{transform}->find_segment('add_three');
 say $seg;
+say "Find div_two from main:";
+$seg = $inst->find_segment('div_two');
+say $seg;
 
 say $inst->is_exhausted ? 'Exhausted!' : 'Not exhausted!';
 for my $child (@{$inst->children}) {

@@ -9,7 +9,7 @@ use v5.22;
 use warnings;
 
 use List::AllUtils qw(last_value max sum);
-use List::UtilsBy qw(max_by);
+use List::UtilsBy qw(max_by min_by);
 use Types::Standard qw(ArrayRef ConsumerOf HashRef InstanceOf);
 
 use Moo::Role;
@@ -105,16 +105,32 @@ sub descendant {
     my ($self, $path) = @_;
 
     my @pieces = $path->split;
-    while (@pieces) {
-        if (exists $self->directory->{$pieces[0]}) {
-            $self = $self->directory->{$pieces[0]};
+    my $descend = $self;
+    while (defined $descend and @pieces) {
+        if (exists $descend->directory->{$pieces[0]}) {
+            $descend = $descend->directory->{$pieces[0]};
             shift @pieces;
         }
         else {
-            return;
+            $descend = undef;
         }
     }
-    return $self;
+
+    unless (defined $descend) {
+        my @possible = grep {
+            defined
+        } map {
+            $_->descendant($path)
+        } grep {
+            $_->can('descendant')
+        } @{$self->children};
+
+        return unless @possible;
+
+        $descend = min_by { $_->path->split } @possible;
+    }
+
+    return $descend;
 }
 
 1;
