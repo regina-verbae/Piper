@@ -65,6 +65,7 @@ has filter => (
     #   though $_[0] will also work
     coerce => sub {
         my $orig = shift;
+        CodeRef->assert_valid($orig);
         return sub {
             my $item = shift;
             local $_ = $item;
