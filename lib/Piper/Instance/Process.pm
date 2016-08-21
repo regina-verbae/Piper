@@ -13,7 +13,6 @@ use Moo;
 with qw(
     Piper::Role::Instance
     Piper::Role::Instance::Process
-    Piper::Role::Instance::NotMain
 );
 
 use overload (

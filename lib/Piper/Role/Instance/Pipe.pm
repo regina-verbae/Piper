@@ -100,6 +100,7 @@ sub _build_follower {
     return \%follow;
 }
 
+#TODO: Search children!
 sub descendant {
     my ($self, $path) = @_;
 

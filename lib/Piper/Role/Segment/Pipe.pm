@@ -9,7 +9,6 @@ use v5.22;
 use warnings;
 
 use Piper::Instance;
-use Piper::Instance::Main;
 use Types::Standard qw(ArrayRef ConsumerOf);
 
 use Moo::Role;
@@ -27,26 +26,17 @@ has children => (
 sub init {
     my $self = shift;
 
-    my $instance;
-    if (_is_main()) {
-        $instance = Piper::Instance::Main->new(
-            pipe => $self,
-            children => [
-                map { $_->init } @{$self->children}
-            ],
-        );
+    my $instance = Piper::Instance->new(
+		pipe => $self,
+		children => [
+			map { $_->init } @{$self->children}
+		],
+	);
 
+    if (_is_main()) {
         # Set the args in the main instance
         my @args = @_;
         $instance->_set_args(\@args);
-    }
-    else {
-        $instance = Piper::Instance->new(
-            pipe => $self,
-            children => [
-                map { $_->init } @{$self->children}
-            ],
-        );
     }
 
     # Set parents for children

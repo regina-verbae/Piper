@@ -9,9 +9,10 @@ use v5.22;
 use warnings;
 
 use List::AllUtils qw(part);
+use Piper::Logger;
 use Piper::Path;
 use Piper::Queue;
-use Types::Standard qw(ConsumerOf InstanceOf);
+use Types::Standard qw(ArrayRef ConsumerOf InstanceOf);
 
 use Moo::Role;
 
@@ -97,7 +98,7 @@ sub find_segment {
     
     $location = Piper::Path->new($location);
     my $parent;
-    if ($self->can('descendent')) {
+    if ($self->can('descendant')) {
         $parent = $self;
     }
     elsif ($self->has_parent) {
@@ -149,6 +150,57 @@ around enqueue => sub {
     $self->INFO("Queueing items", @items);
     $self->$orig(@items);
 };
+
+has main => (
+    is => 'lazy',
+    isa => ConsumerOf['Piper::Role::Instance'],
+    weak_ref => 1,
+);
+
+sub _build_main {
+    my ($self) = @_;
+    my $parent = $self;
+    while ($parent->has_parent) {
+        $parent = $parent->parent;
+    }
+    return $parent;
+}
+
+has logger => (
+    is => 'lazy',
+    isa => ConsumerOf['Piper::Role::Logger'],
+    handles => 'Piper::Role::Logger',
+);
+
+sub _build_logger {
+    my ($self) = @_;
+    
+    if ($self->has_parent) {
+        return $self->main->logger;
+    }
+    else {
+        return Piper::Logger->new(
+            $self->has_extra ? $self->extra : ()
+        );
+    }
+}
+
+has args => (
+    is => 'rwp',
+    isa => ArrayRef,
+    lazy => 1,
+    builder => 1,
+);
+
+sub _build_args {
+    my ($self) = @_;
+    if ($self->has_parent) {
+        return $self->main->args;
+    }
+    else {
+        return [];
+    }
+}
 
 # Cute little trick to auto-insert the instance object
 # as first argument, since $self will become the logger
