@@ -96,25 +96,26 @@ has drain => (
 sub find_segment {
     my ($self, $location) = @_;
     
-    $location = Piper::Path->new($location);
-    my $parent;
-    if ($self->can('descendant')) {
-        $parent = $self;
-    }
-    elsif ($self->has_parent) {
-        $parent = $self->parent;
-    }
-    else {
-        # Lonely Piper::Instance::Process
-        return "$self" eq "$location" ? $self : undef;
-    }
-    my $segment = $parent->descendant($location);
-    while (!defined $segment and $parent->has_parent) {
-        $parent = $parent->parent;
-        $segment = $parent->descendant($location);
+    state $cache = {};
+
+    unless (exists $cache->{$self->path}{$location}) {
+        $location = Piper::Path->new($location);
+        if ($self->can('descendant') or $self->has_parent) {
+            my $parent = $self->can('descendant') ? $self : $self->parent;
+            my $segment = $parent->descendant($location);
+            while (!defined $segment and $parent->has_parent) {
+                $parent = $parent->parent;
+                $segment = $parent->descendant($location);
+            }
+            $cache->{$self->path}{$location} = $segment;
+        }
+        else {
+            # Lonely Piper::Instance::Process
+            $cache->{$self->path}{$location} = "$self" eq "$location" ? $self : undef;
+        }
     }
 
-    return $segment;
+    return $cache->{$self->path}{$location};
 }
 
 around enqueue => sub {
