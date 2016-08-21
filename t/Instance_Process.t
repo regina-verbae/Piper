@@ -15,6 +15,32 @@ use Piper::Process;
 
 #####################################################################
 
+# Test args
+{
+    subtest "$APP - args" => sub {
+        my $ARG = Piper::Process->new(argy => {
+            batch_size => 2,
+            handler => sub {
+                my ($instance, $batch, @args) = @_;
+                if ($args[0] eq 'arg') {
+                    $instance->emit(@$batch);
+                }
+                return;
+            },
+        })->init('arg');
+
+        is($ARG->args->[0], 'arg', 'stored ok');
+
+        $ARG->enqueue(1..2);
+        $ARG->process_batch;
+        is_deeply(
+            [ $ARG->dequeue(2) ],
+            [ 1..2 ],
+            'passthrough to handler ok'
+        );
+    };
+}
+
 my $TEST = Piper::Process->new(half => {
     batch_size => 2,
     # Non-explicitly testing that filter $_ closure works
@@ -23,14 +49,7 @@ my $TEST = Piper::Process->new(half => {
         my ($instance, $batch, @args) = @_;
         return (map { int( $_ / 2 ) } @$batch);
     },
-})->init(qw(arg));
-
-# Test args
-{
-    subtest "$APP - args" => sub {
-        is($TEST->args->[0], 'arg', 'ok');
-    };
-}
+})->init();
 
 # Test path
 {
