@@ -49,7 +49,7 @@ around BUILDARGS => sub {
             $thing->_set_label($label) if $label;
             push @{$hash{children}}, $thing;
         }
-        elsif (eval { $thing->isa('Piper::Instance') }) {
+        elsif (eval { $thing->isa('Piper::Instance') or $thing->isa('Piper::Instance::Main') }) {
             $thing = $thing->pipe;
             $thing->_set_label($label) if $label;
             push @{$hash{children}}, $thing;
