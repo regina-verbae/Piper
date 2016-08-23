@@ -104,7 +104,7 @@ sub _build_follower {
 }
 
 sub descendant {
-    my ($self, $path) = @_;
+    my ($self, $path, $referrer) = @_;
 
     my @pieces = $path->split;
     my $descend = $self;
@@ -119,12 +119,17 @@ sub descendant {
     }
 
     unless (defined $descend) {
+        $referrer //= '';
+
         my @possible = grep {
             defined
         } map {
             $_->descendant($path)
         } grep {
             $_->can('descendant')
+        } grep {
+            # Don't search the referrer's tree - already done
+            $_ ne $referrer
         } @{$self->children};
 
         return unless @possible;

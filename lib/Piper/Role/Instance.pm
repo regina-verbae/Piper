@@ -104,8 +104,9 @@ sub find_segment {
             my $parent = $self->can('descendant') ? $self : $self->parent;
             my $segment = $parent->descendant($location);
             while (!defined $segment and $parent->has_parent) {
+                my $referrer = $parent;
                 $parent = $parent->parent;
-                $segment = $parent->descendant($location);
+                $segment = $parent->descendant($location, $referrer);
             }
             $cache->{$self->path}{$location} = $segment;
         }
