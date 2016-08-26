@@ -55,7 +55,7 @@ sub process_batch {
 
 sub pressure {
     my ($self) = @_;
-    return $self->pending - $self->get_batch_size;
+    return $self->pending ? int(100 * $self->pending / $self->get_batch_size) : 0;
 }
 
 sub emit {

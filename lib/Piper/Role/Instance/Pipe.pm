@@ -50,13 +50,13 @@ sub process_batch {
 
     my $best;
     # Overflowing process closest to drain
-    if ($best = last_value { $_->pressure > 0 } @{$self->children}) {
-        $self->DEBUG("Chose batch $best: overflowing process closest to drain");
+    if ($best = last_value { $_->pressure >= 100 } @{$self->children}) {
+        $self->DEBUG("Chose batch $best: full-batch process closest to drain");
     }
     # If no overflowing processes, choose the one closest to overflow
     else {
         $best = max_by { $_->pressure } @{$self->children};
-        $self->DEBUG("Chose batch $best: closest to overflow");
+        $self->DEBUG("Chose batch $best: closest to full-batch");
     }
     
     $best->process_batch;

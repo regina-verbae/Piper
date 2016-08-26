@@ -77,14 +77,14 @@ my $TEST = Piper::Process->new(half => {
     subtest "$APP - queueing" => sub {
         ok(!$TEST->pending, 'not yet pending');
         ok(!$TEST->ready, 'not yet ready');
-        is($TEST->pressure, -2, 'minimum pressure');
+        is($TEST->pressure, 0, 'no pressure');
 
         my @data = (1..3);
         $TEST->enqueue(map { $_ * 2 } @data);
 
         is($TEST->pending, 3, 'pending items');
         ok(!$TEST->ready, 'still not ready');
-        is($TEST->pressure, 1, 'positive pressure');
+        is($TEST->pressure, 150, 'positive pressure');
     };
 }
 
