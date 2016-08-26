@@ -111,16 +111,16 @@ sub find_segment {
                 $parent = $parent->parent;
                 $segment = $parent->descendant($location, $referrer);
             }
-            $cache->{$location} = $segment // '';
+            $cache->{$location} = $segment;
         }
         else {
             # Lonely Piper::Instance::Process
-            $cache->{$location} = "$self" eq "$location" ? $self : '';
+            $cache->{$location} = "$self" eq "$location" ? $self : undef;
         }
-        weaken($cache->{$location}) if $cache->{$location};
+        weaken($cache->{$location}) if defined $cache->{$location};
     }
 
-    $self->DEBUG("Found label $location: '$cache->{$location}'");
+    $self->DEBUG("Found label $location: '$cache->{$location}'") if defined $cache->{$location};
     return $cache->{$location};
 }
 
