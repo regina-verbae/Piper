@@ -106,6 +106,8 @@ sub _build_follower {
 sub descendant {
     my ($self, $path, $referrer) = @_;
 
+    $self->DEBUG("Searching for location '$path'");
+
     my @pieces = $path->split;
     my $descend = $self;
     while (defined $descend and @pieces) {

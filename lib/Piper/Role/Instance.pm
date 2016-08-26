@@ -12,6 +12,7 @@ use List::AllUtils qw(part);
 use Piper::Logger;
 use Piper::Path;
 use Piper::Queue;
+use Scalar::Util qw(weaken);
 use Types::Standard qw(ArrayRef ConsumerOf InstanceOf);
 
 use Moo::Role;
@@ -96,9 +97,11 @@ has drain => (
 sub find_segment {
     my ($self, $location) = @_;
     
-    state $cache = {};
+    state $global_cache = {};
+    $global_cache->{$self->main->id}{$self->path} //= {};
+    my $cache = $global_cache->{$self->main->id}{$self->path};
 
-    unless (exists $cache->{$self->path}{$location}) {
+    unless (exists $cache->{$location}) {
         $location = Piper::Path->new($location);
         if ($self->can('descendant') or $self->has_parent) {
             my $parent = $self->can('descendant') ? $self : $self->parent;
@@ -108,15 +111,17 @@ sub find_segment {
                 $parent = $parent->parent;
                 $segment = $parent->descendant($location, $referrer);
             }
-            $cache->{$self->path}{$location} = $segment;
+            $cache->{$location} = $segment // '';
         }
         else {
             # Lonely Piper::Instance::Process
-            $cache->{$self->path}{$location} = "$self" eq "$location" ? $self : undef;
+            $cache->{$location} = "$self" eq "$location" ? $self : '';
         }
+        weaken($cache->{$location}) if $cache->{$location};
     }
 
-    return $cache->{$self->path}{$location};
+    $self->DEBUG("Found label $location: '$cache->{$location}'");
+    return $cache->{$location};
 }
 
 around enqueue => sub {
