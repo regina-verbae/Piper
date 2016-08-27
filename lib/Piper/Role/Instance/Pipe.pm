@@ -60,13 +60,6 @@ sub process_batch {
     }
     
     $best->process_batch;
-    
-    # Emit results to next segment
-    if (my $ready = $best->ready) {
-        $self->follower->{$best}->enqueue(
-            $best->dequeue($ready)
-        );
-    }
 }
 
 has directory => (

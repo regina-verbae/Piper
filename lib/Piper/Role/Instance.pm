@@ -89,10 +89,18 @@ sub isnt_exhausted {
 
 has drain => (
     is => 'lazy',
-    isa => InstanceOf['Piper::Queue'],
-    builder => sub { Piper::Queue->new() },
     handles => [qw(dequeue ready)],
 );
+
+sub _build_drain {
+    my ($self) = @_;
+    if ($self->has_parent) {
+        return $self->parent->follower->{$self};
+    }
+    else {
+        return Piper::Queue->new();
+    }
+}
 
 sub find_segment {
     my ($self, $location) = @_;
