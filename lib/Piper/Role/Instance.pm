@@ -102,6 +102,51 @@ sub _build_drain {
     }
 }
 
+sub emit {
+    my $self = shift;
+    $self->INFO("Emitting", @_);
+    # Just collect in the drain
+    $self->drain->enqueue(@_);
+}
+
+sub recycle {
+    my $self = shift;
+    $self->INFO("Recycling", @_);
+    $self->enqueue(@_);
+}
+
+sub eject {
+    my $self = shift;
+    $self->INFO("Ejecting to drain", @_);
+    $self->main->drain->enqueue(@_);
+}
+
+sub inject {
+    my $self = shift;
+    $self->INFO('Injecting to '.$self->main, @_);
+    $self->main->enqueue(@_);
+}
+
+sub injectAt {
+    my $self = shift;
+    my $location = shift;
+    my $segment = $self->find_segment($location);
+    $self->ERROR("Could not find $location to injectAt", @_)
+        if !defined $segment;
+    $self->INFO("Injecting to $location", @_);
+    $segment->enqueue(@_);
+}
+
+sub injectAfter {
+    my $self = shift;
+    my $location = shift;
+    my $segment = $self->find_segment($location);
+    $self->ERROR("Could not find $location to injectAfter", @_)
+        if !defined $segment;
+    $self->INFO("Injecting to $location", @_);
+    $segment->drain->enqueue(@_);
+}
+
 sub find_segment {
     my ($self, $location) = @_;
     
