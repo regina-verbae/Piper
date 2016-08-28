@@ -186,6 +186,14 @@ my $TEST = Piper::Process->new(half => {
     };
 }
 
+# Test find_segment
+{
+    subtest "$APP - find_segment" => sub {
+        is($TEST->find_segment('half'), $TEST->label, 'ok');
+        is($TEST->find_segment('bad'), undef, 'bad label not found');
+    };
+}
+
 # Test emit
 {
     subtest "$APP - emit" => sub {
