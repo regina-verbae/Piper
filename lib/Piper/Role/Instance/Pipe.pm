@@ -98,13 +98,20 @@ sub _build_follower {
 
 sub descendant {
     my ($self, $path, $referrer) = @_;
+    $referrer //= '';
 
     $self->DEBUG("Searching for location '$path'");
+    $self->DEBUG("Referrer", $referrer) if $referrer;
 
-    my @pieces = $path->split;
+    # Search immediate children
+    $path = Piper::Path->new($path) if $path and not ref $path;
+    my @pieces = $path ? $path->split : ();
     my $descend = $self;
     while (defined $descend and @pieces) {
-        if (exists $descend->directory->{$pieces[0]}) {
+        if (!$descend->can('directory')) {
+            $descend = undef;
+        }
+        elsif (exists $descend->directory->{$pieces[0]}) {
             $descend = $descend->directory->{$pieces[0]};
             shift @pieces;
         }
@@ -113,23 +120,35 @@ sub descendant {
         }
     }
 
-    unless (defined $descend) {
-        $referrer //= '';
+    # Search grandchildren,
+    #   but not when checking whether requested location starts at $self (referrer = $self)
+    if (!defined $descend and $referrer ne $self) {
+        my @possible;
+        for my $child (@{$self->children}) {
+            if ($child eq $referrer) {
+                $self->DEBUG("Skipping search of '$child' referrer");
+                next;
+            }
+            if ($child->can('descendant')) {
+                my $potential = $child->descendant($path);
+                push @possible, $potential if defined $potential;
+            }
+        }
 
-        my @possible = grep {
-            defined
-        } map {
-            $_->descendant($path)
-        } grep {
-            $_->can('descendant')
-        } grep {
-            # Don't search the referrer's tree - already done
-            $_ ne $referrer
-        } @{$self->children};
+        if (@possible) {
+            $descend = min_by { $_->path->split } @possible;
+        }
+    }
 
-        return unless @possible;
-
-        $descend = min_by { $_->path->split } @possible;
+    # If location begins with $self->label, see if requested location starts at $self
+    #   but not if already checking that (referrer = $self)
+    if (!defined $descend and $referrer ne $self) {
+        my $overlap = $self->label;
+        if ($path =~ m{^\Q$overlap\E(?:$|/(?<path>.*))}) {
+            $path = $+{path} // '';
+            $self->DEBUG("Overlapping descendant search", $path ? $path : ());
+            $descend = $path ? $self->descendant($path, $self) : $self;
+        }
     }
 
     return $descend;
