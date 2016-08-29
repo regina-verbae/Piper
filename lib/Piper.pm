@@ -22,8 +22,18 @@ use overload (
     fallback => 1,
 );
 
+my $CONFIG;
+
 sub default_batch_size {
     return 50;
+}
+
+sub import {
+    my $class = shift;
+    if (@_) {
+        require Piper::Config;
+        $CONFIG = Piper::Config->new(@_);
+    }
 }
 
 around BUILDARGS => sub {
@@ -64,6 +74,8 @@ around BUILDARGS => sub {
             %opts = %{shift @args};
         }
     }
+
+    $opts{config} = $CONFIG if defined $CONFIG;
 
     return $self->$orig(%opts, %hash);
 };

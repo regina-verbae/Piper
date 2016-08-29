@@ -20,6 +20,16 @@ use overload (
     fallback => 1,
 );
 
+my $CONFIG;
+
+sub import {
+    my $class = shift;
+    if (@_) {
+        require Piper::Config;
+        $CONFIG = Piper::Config->new(@_);
+    }
+}
+
 around BUILDARGS => sub {
     my ($orig, $self, @args) = @_;
 
@@ -41,6 +51,8 @@ around BUILDARGS => sub {
         die "Labels may not be a reference" if ref $args[0];
         $hash{label} = shift @args;
     }
+
+    $hash{config} = $CONFIG if defined $CONFIG;
 
     return $self->$orig(%hash);
 };

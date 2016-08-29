@@ -10,9 +10,7 @@ use warnings;
 
 use List::AllUtils qw(last_value max part sum);
 use List::UtilsBy qw(max_by min_by);
-use Piper::Logger;
 use Piper::Path;
-use Piper::Queue;
 use Scalar::Util qw(weaken);
 use Types::Standard qw(ArrayRef ConsumerOf Enum HashRef InstanceOf Tuple slurpy);
 
@@ -145,7 +143,7 @@ sub _build_queue {
         return $self->children->[0];
     }
     else {
-        return Piper::Queue->new();
+        return $self->main->config->queue_class->new();
     }
 }
 
@@ -278,7 +276,7 @@ sub _build_drain {
         return $self->parent->follower->{$self};
     }
     else {
-        return Piper::Queue->new();
+        return $self->main->config->queue_class->new();
     }
 }
 
@@ -418,7 +416,7 @@ sub _build_logger {
         return $self->main->logger;
     }
     else {
-        return Piper::Logger->new(
+        return $self->main->config->logger_class->new(
             $self->has_extra ? $self->extra : ()
         );
     }

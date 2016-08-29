@@ -8,7 +8,7 @@ package Piper::Role::Segment;
 use v5.22;
 use warnings;
 
-use Types::Standard qw(Bool CodeRef HashRef);
+use Types::Standard qw(Bool CodeRef HashRef InstanceOf);
 use Types::Common::Numeric qw(PositiveInt);
 use Types::Common::String qw(NonEmptySimpleStr);
 
@@ -34,6 +34,18 @@ has batch_size => (
     is => 'ro',
     isa => PositiveInt,
     predicate => 1,
+);
+
+=head2 config
+
+A Piper::Config object defining component classes.
+
+=cut
+
+has config => (
+    is => 'lazy',
+    isa => InstanceOf['Piper::Config'],
+    builder => sub { require Piper::Config; return Piper::Config->new() },
 );
 
 =head2 filter
