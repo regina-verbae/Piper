@@ -30,7 +30,7 @@ sub init {
     my $self = shift;
 
     my $instance = Piper::Instance->new(
-		pipe => $self,
+		segment => $self,
 		children => [
 			map { $_->init } @{$self->children}
 		],

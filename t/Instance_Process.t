@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Test the Piper::Instance::Process module
+## ABSTRACT: Test the Piper::Instance module on single process
 #####################################################################
 
 use v5.22;
@@ -9,7 +9,7 @@ use warnings;
 
 use Test::Most;
 
-my $APP = "Piper::Instance::Process";
+my $APP = "Piper::Instance (process)";
 
 use Piper::Process;
 

@@ -8,7 +8,7 @@ package Piper::Role::Segment::Process;
 use v5.22;
 use warnings;
 
-use Piper::Instance::Process;
+use Piper::Instance;
 use Types::Standard qw(CodeRef);
 
 use Moo::Role;
@@ -26,8 +26,8 @@ has handler => (
 sub init {
     my ($self) = @_;
 
-    return Piper::Instance::Process->new(
-        process => $self,
+    return Piper::Instance->new(
+        segment => $self,
     );
 }
 

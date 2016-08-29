@@ -12,7 +12,6 @@ use Moo;
 
 with qw(
     Piper::Role::Instance
-    Piper::Role::Instance::Pipe
 );
 
 use overload (

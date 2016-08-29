@@ -44,13 +44,8 @@ around BUILDARGS => sub {
             $thing->_set_label($label) if $label;
             push @{$hash{children}}, $thing;
         }
-        elsif (eval { $thing->isa('Piper::Instance::Process') }) {
-            $thing = $thing->process;
-            $thing->_set_label($label) if $label;
-            push @{$hash{children}}, $thing;
-        }
         elsif (eval { $thing->isa('Piper::Instance') }) {
-            $thing = $thing->pipe;
+            $thing = $thing->segment;
             $thing->_set_label($label) if $label;
             push @{$hash{children}}, $thing;
         }

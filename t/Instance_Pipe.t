@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Test the Piper::Instance module
+## ABSTRACT: Test the Piper::Instance module with pipes
 #####################################################################
 
 use v5.22;

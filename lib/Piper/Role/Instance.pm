@@ -8,23 +8,203 @@ package Piper::Role::Instance;
 use v5.22;
 use warnings;
 
-use List::AllUtils qw(part);
+use List::AllUtils qw(last_value max part sum);
+use List::UtilsBy qw(max_by min_by);
 use Piper::Logger;
 use Piper::Path;
 use Piper::Queue;
 use Scalar::Util qw(weaken);
-use Types::Standard qw(ArrayRef ConsumerOf InstanceOf);
+use Types::Standard qw(ArrayRef ConsumerOf Enum HashRef InstanceOf Tuple slurpy);
 
 use Moo::Role;
 
 with qw(Piper::Role::Queue);
 
-requires 'pending';
+has segment => (
+    is => 'ro',
+    isa => ConsumerOf['Piper::Role::Segment'],
+    handles => 'Piper::Role::Segment',
+    required => 1,
+);
 
-requires 'process_batch';
+has children => (
+    is => 'ro',
+    # Must contain at least one child
+    isa => Tuple[ConsumerOf['Piper::Role::Instance'],
+        slurpy ArrayRef[ConsumerOf['Piper::Role::Instance']]
+    ],
+    required => 0,
+    predicate => 1,
+);
+
+has directory => (
+    is => 'lazy',
+    isa => HashRef,
+);
+
+sub _build_directory {
+    my ($self) = @_;
+    return {} unless $self->has_children;
+    my %dir;
+    for my $child (@{$self->children}) {
+        $dir{$child->path->name} = $child;
+    }
+    return \%dir;
+}
+
+#TODO: make this a method called by children
+has follower => (
+    is => 'lazy',
+    isa => HashRef,
+);
+
+sub _build_follower {
+    my ($self) = @_;
+    return {} unless $self->has_children;
+    my %follow;
+    for my $index (keys @{$self->children}) {
+        if (defined $self->children->[$index + 1]) {
+            $follow{$self->children->[$index]} =
+                $self->children->[$index + 1];
+        }
+        else {
+            $follow{$self->children->[$index]} = $self->drain;
+        }
+    }
+    return \%follow;
+}
+
+sub descendant {
+    my ($self, $path, $referrer) = @_;
+    return unless $self->has_children;
+    $referrer //= '';
+
+    $self->DEBUG("Searching for location '$path'");
+    $self->DEBUG("Referrer", $referrer) if $referrer;
+
+    # Search immediate children
+    $path = Piper::Path->new($path) if $path and not ref $path;
+    my @pieces = $path ? $path->split : ();
+    my $descend = $self;
+    while (defined $descend and @pieces) {
+        if (!$descend->has_children) {
+            $descend = undef;
+        }
+        elsif (exists $descend->directory->{$pieces[0]}) {
+            $descend = $descend->directory->{$pieces[0]};
+            shift @pieces;
+        }
+        else {
+            $descend = undef;
+        }
+    }
+
+    # Search grandchildren,
+    #   but not when checking whether requested location starts at $self (referrer = $self)
+    if (!defined $descend and $referrer ne $self) {
+        my @possible;
+        for my $child (@{$self->children}) {
+            if ($child eq $referrer) {
+                $self->DEBUG("Skipping search of '$child' referrer");
+                next;
+            }
+            if ($child->has_children) {
+                my $potential = $child->descendant($path);
+                push @possible, $potential if defined $potential;
+            }
+        }
+
+        if (@possible) {
+            $descend = min_by { $_->path->split } @possible;
+        }
+    }
+
+    # If location begins with $self->label, see if requested location starts at $self
+    #   but not if already checking that (referrer = $self)
+    if (!defined $descend and $referrer ne $self) {
+        my $overlap = $self->label;
+        if ($path =~ m{^\Q$overlap\E(?:$|/(?<path>.*))}) {
+            $path = $+{path} // '';
+            $self->DEBUG("Overlapping descendant search", $path ? $path : ());
+            $descend = $path ? $self->descendant($path, $self) : $self;
+        }
+    }
+
+    return $descend;
+}
+
+has queue => (
+    is => 'lazy',
+    isa => ConsumerOf['Piper::Role::Queue'],
+    handles => [qw(enqueue)],
+);
+
+sub _build_queue {
+    my ($self) = @_;
+    if ($self->has_children) {
+        return $self->children->[0];
+    }
+    else {
+        return Piper::Queue->new();
+    }
+}
+
+sub pending {
+    my ($self) = @_;
+    if ($self->has_children) {
+        return sum(map { $_->pending } @{$self->children});
+    }
+    else {
+        return $self->queue->ready;
+    }
+}
 
 # Metric for "how full" the pending queue is
-requires 'pressure';
+sub pressure {
+    my ($self) = @_;
+    if ($self->has_children) {
+        return max(map { $_->pressure } @{$self->children});
+    }
+    else {
+        return $self->pending ? int(100 * $self->pending / $self->get_batch_size) : 0;
+    }
+}
+
+sub process_batch {
+    my ($self) = @_;
+    if ($self->has_children) {
+        my $best;
+        # Full-batch process closest to drain
+        if ($best = last_value { $_->pressure >= 100 } @{$self->children}) {
+            $self->DEBUG("Chose batch $best: full-batch process closest to drain");
+        }
+        # If no full batch, choose the one closest to full
+        else {
+            $best = max_by { $_->pressure } @{$self->children};
+            $self->DEBUG("Chose batch $best: closest to full-batch");
+        }
+        $best->process_batch;
+    }
+    else {
+        my $num = $self->get_batch_size;
+        $self->DEBUG("Processing batch with max size", $num);
+
+        my @batch = $self->queue->dequeue($num);
+        $self->INFO("Processing batch", @batch);
+
+        #TODO: Remove auto-emitting return values?
+        my @things = $self->segment->handler->(
+            $self,
+            \@batch,
+            @{$self->args}
+        );
+
+        if (@things) {
+            $self->INFO("Auto-emitting", @things);
+            $self->drain->enqueue(@things);
+        }
+    }
+}
 
 has parent => (
     is => 'rwp',
@@ -156,8 +336,8 @@ sub find_segment {
 
     unless (exists $cache->{$location}) {
         $location = Piper::Path->new($location);
-        if ($self->can('descendant') or $self->has_parent) {
-            my $parent = $self->can('descendant') ? $self : $self->parent;
+        if ($self->has_children or $self->has_parent) {
+            my $parent = $self->has_children ? $self : $self->parent;
             my $segment = $parent->descendant($location);
             while (!defined $segment and $parent->has_parent) {
                 my $referrer = $parent;
@@ -167,7 +347,7 @@ sub find_segment {
             $cache->{$location} = $segment;
         }
         else {
-            # Lonely Piper::Instance::Process
+            # Lonely Process (no parents or children)
             $cache->{$location} = "$self" eq "$location" ? $self : undef;
         }
         weaken($cache->{$location}) if defined $cache->{$location};
