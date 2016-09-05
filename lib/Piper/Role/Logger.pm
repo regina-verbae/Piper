@@ -101,6 +101,8 @@ around DEBUG => sub {
 
 =head2 WARN
 
+This method should issue a warning.
+
 =cut
 
 requires 'WARN';
