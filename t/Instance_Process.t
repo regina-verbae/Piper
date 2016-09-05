@@ -9,6 +9,7 @@ use strict;
 use warnings;
 
 use Test::Most;
+use Test::Memory::Cycle;
 
 my $APP = "Piper::Instance (process)";
 
@@ -308,6 +309,13 @@ my $TEST = Piper::Process->new(half => {
             $TEST->injectAfter('bad', 1..4)
         } qr/Could not find bad to injectAfter/, 'no injectAfter with bad label';
     };
+}
+
+# Test memory leaks
+{
+	subtest "$APP - memory" => sub {
+		memory_cycle_ok($TEST, 'no memory leaks');
+	};
 }
 
 #####################################################################

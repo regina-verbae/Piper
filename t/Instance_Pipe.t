@@ -9,6 +9,7 @@ use strict;
 use warnings;
 
 use Test::Most;
+use Test::Memory::Cycle;
 
 my $APP = "Piper::Instance";
 
@@ -469,6 +470,9 @@ use Piper;
                 $SMALL->injectAfter('bad', 1..4)
             } qr/Could not find bad to injectAfter/, 'no injectAfter with bad label';
         };
+
+		# Test memory leak
+		memory_cycle_ok($SMALL, "$APP - no memory leaks");
     };
 }
 
@@ -722,6 +726,9 @@ subtest "$APP - nested pipes" => sub {
             'items dequeued, only processed by first grandchild'
         );
     };
+
+	# Test memory leak
+	memory_cycle_ok($TEST, "$APP - no memory leaks");
 };
 
 #####################################################################
