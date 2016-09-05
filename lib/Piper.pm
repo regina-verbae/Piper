@@ -24,10 +24,6 @@ use overload (
 
 my $CONFIG;
 
-sub default_batch_size {
-    return 50;
-}
-
 sub import {
     my $class = shift;
     if (@_) {

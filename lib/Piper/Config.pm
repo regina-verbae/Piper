@@ -8,23 +8,16 @@ package Piper::Config;
 use v5.22;
 use warnings;
 
+use Types::Common::Numeric qw(PositiveInt);
 use Types::Standard qw(ClassName);
 
 use Moo;
 use namespace::clean;
 
-has queue_class => (
+has batch_size => (
     is => 'lazy',
-    isa => sub {
-        my $value = shift;
-        eval "require $value";
-        ClassName->assert_valid($value);
-        unless ($value->does('Piper::Role::Queue')) {
-            die "queue_class '$value' does not consume role 'Piper::Role::Queue'\n";
-        }
-        return 1;
-    },
-    default => 'Piper::Queue',
+    isa => PositiveInt,
+    default => 50,
 );
 
 has logger_class => (
@@ -39,6 +32,20 @@ has logger_class => (
         return 1;
     },
     default => 'Piper::Logger',
+);
+
+has queue_class => (
+    is => 'lazy',
+    isa => sub {
+        my $value = shift;
+        eval "require $value";
+        ClassName->assert_valid($value);
+        unless ($value->does('Piper::Role::Queue')) {
+            die "queue_class '$value' does not consume role 'Piper::Role::Queue'\n";
+        }
+        return 1;
+    },
+    default => 'Piper::Queue',
 );
 
 1;
