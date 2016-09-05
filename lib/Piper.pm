@@ -5,7 +5,8 @@
 
 package Piper;
 
-use v5.16;
+use v5.10;
+use strict;
 use warnings;
 
 use Piper::Process;

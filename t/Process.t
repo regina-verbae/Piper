@@ -4,7 +4,8 @@
 ## ABSTRACT: Test the Piper::Process module
 #####################################################################
 
-use v5.22;
+use v5.10;
+use strict;
 use warnings;
 
 use Test::Most;

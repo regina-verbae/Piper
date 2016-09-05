@@ -5,7 +5,8 @@
 
 package Piper::Path;
 
-use v5.22;
+use v5.10;
+use strict;
 use warnings;
 
 use Types::Standard qw(ArrayRef Str);

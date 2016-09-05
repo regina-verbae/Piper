@@ -5,7 +5,8 @@
 
 package Piper::Instance;
 
-use v5.22;
+use v5.10;
+use strict;
 use warnings;
 
 use List::AllUtils qw(last_value);

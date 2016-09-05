@@ -5,7 +5,8 @@
 
 package Piper::Role::Instance;
 
-use v5.22;
+use v5.10;
+use strict;
 use warnings;
 
 use List::AllUtils qw(max part sum);
@@ -181,7 +182,7 @@ has follower => (
         my ($self) = @_;
         return {} unless $self->has_children;
         my %follow;
-        for my $index (keys @{$self->children}) {
+        for my $index (0..$#{$self->children}) {
             if (defined $self->children->[$index + 1]) {
                 $follow{$self->children->[$index]} =
                     $self->children->[$index + 1];
