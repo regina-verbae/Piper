@@ -43,6 +43,44 @@ which can be used to trump the values set by a program.
 
 =head1 METHODS
 
+=head2 DEBUG($segment, $message, @items)
+
+This method will be a no-op unless debug > 0.
+
+Prints an informational message to STDERR.
+
+Uses the method make_message to format the printed
+message according to debug/verbose levels and the
+arguments.
+
+Labels the message by pre-pending 'Info: ' to the
+formatted message.
+
+=cut
+
+sub DEBUG {
+    my $self = shift;
+    $self->INFO(@_);
+}
+
+=head2 ERROR($segment, $message, @items)
+
+Prints an error to STDERR and dies via Carp::croak.
+
+Uses the method make_message to format the printed
+message according to debug/verbose levels and the
+arguments.
+
+Labels the message by pre-pending 'Error: ' to the
+formatted message.
+
+=cut
+
+sub ERROR {
+    my $self = shift;
+    Carp::croak('Error: '.$self->make_message(@_));
+}
+
 =head2 INFO($segment, $message, @items)
 
 This method will be a no-op unless verbose > 0 or
@@ -64,26 +102,6 @@ sub INFO {
     say STDERR 'Info: '.$self->make_message(@_);
 }
 
-=head2 DEBUG($segment, $message, @items)
-
-This method will be a no-op unless debug > 0.
-
-Prints an informational message to STDERR.
-
-Uses the method make_message to format the printed
-message according to debug/verbose levels and the
-arguments.
-
-Labels the message by pre-pending 'Info: ' to the
-formatted message.
-
-=cut
-
-sub DEBUG {
-    my $self = shift;
-    $self->INFO(@_);
-}
-
 =head2 WARN($segment, $message, @items)
 
 Prints a warning to STDERR via Carp::carp.
@@ -100,24 +118,6 @@ the formatted message.
 sub WARN {
     my $self = shift;
     Carp::carp('Warning: '.$self->make_message(@_));
-}
-
-=head2 ERROR($segment, $message, @items)
-
-Prints an error to STDERR and dies via Carp::croak.
-
-Uses the method make_message to format the printed
-message according to debug/verbose levels and the
-arguments.
-
-Labels the message by pre-pending 'Error: ' to the
-formatted message.
-
-=cut
-
-sub ERROR {
-    my $self = shift;
-    Carp::croak('Error: '.$self->make_message(@_));
 }
 
 =head2 make_message($segment, $message, @items)

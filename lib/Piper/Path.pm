@@ -18,11 +18,6 @@ use overload (
     fallback => 1,
 );
 
-has path => (
-    is => 'ro',
-    isa => ArrayRef[Str],
-);
-
 =head1 CONSTRUCTOR
 
 =head2 new(@segments)
@@ -33,6 +28,11 @@ Ex:
     new($parent_path_object, qw(child))
 
 =cut
+
+has path => (
+    is => 'ro',
+    isa => ArrayRef[Str],
+);
 
 around BUILDARGS => sub {
     my ($orig, $self, @args) = @_;

@@ -38,17 +38,6 @@ which can be used to trump the values set by a program.
 
 =cut
 
-has verbose => (
-    is => 'rw',
-    isa => PositiveOrZeroNum,
-    coerce => sub {
-        # Environment variable always wins
-        my $value = shift;
-        return $ENV{PIPER_VERBOSE} // $value;
-    },
-    default => 0,
-);
-
 has debug => (
     is => 'rw',
     isa => PositiveOrZeroNum,
@@ -56,6 +45,17 @@ has debug => (
         # Environment variable always wins
         my $value = shift;
         return $ENV{PIPER_DEBUG} // $value;
+    },
+    default => 0,
+);
+
+has verbose => (
+    is => 'rw',
+    isa => PositiveOrZeroNum,
+    coerce => sub {
+        # Environment variable always wins
+        my $value = shift;
+        return $ENV{PIPER_VERBOSE} // $value;
     },
     default => 0,
 );
@@ -71,20 +71,6 @@ Each method will be provided the following arguments:
   $message  # The (string) message sent
   @items    # Any specific items the message is about
 
-=head2 INFO
-
-This method is only called if verbose > 0 or debug > 0.
-
-=cut
-
-requires 'INFO';
-
-around INFO => sub {
-    my ($orig, $self) = splice @_, 0, 2;
-    return unless $self->verbose or $self->debug;
-    $self->$orig(@_);
-};
-
 =head2 DEBUG
 
 This method is only called if debug > 0.
@@ -99,14 +85,6 @@ around DEBUG => sub {
     $self->$orig(@_);
 };
 
-=head2 WARN
-
-This method should issue a warning.
-
-=cut
-
-requires 'WARN';
-
 =head2 ERROR
 
 The method should cause a die.  It will do so
@@ -120,5 +98,27 @@ requires 'ERROR';
 after ERROR => sub {
     die "ERROR encountered";
 };
+
+=head2 INFO
+
+This method is only called if verbose > 0 or debug > 0.
+
+=cut
+
+requires 'INFO';
+
+around INFO => sub {
+    my ($orig, $self) = splice @_, 0, 2;
+    return unless $self->verbose or $self->debug;
+    $self->$orig(@_);
+};
+
+=head2 WARN
+
+This method should issue a warning.
+
+=cut
+
+requires 'WARN';
 
 1;

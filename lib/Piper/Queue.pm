@@ -15,17 +15,17 @@ use namespace::clean;
 
 with 'Piper::Role::Queue';
 
-has queue => (
-    is => 'ro',
-    isa => ArrayRef,
-    default => sub { [] },
-);
-
 =head1 CONSTRUCTOR
 
 =head2 new
 
 =cut
+
+has queue => (
+    is => 'ro',
+    isa => ArrayRef,
+    default => sub { [] },
+);
 
 =head1 METHODS
 
