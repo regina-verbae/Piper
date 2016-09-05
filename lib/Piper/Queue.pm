@@ -11,6 +11,7 @@ use warnings;
 use Types::Standard qw(ArrayRef);
 
 use Moo;
+use namespace::clean;
 
 with 'Piper::Role::Queue';
 

@@ -11,6 +11,7 @@ use warnings;
 use Types::Standard qw(ArrayRef Str);
 
 use Moo;
+use namespace::clean;
 
 use overload (
     q{""} => sub { $_[0]->stringify },

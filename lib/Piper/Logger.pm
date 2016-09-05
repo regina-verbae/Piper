@@ -8,7 +8,7 @@ package Piper::Logger;
 use v5.22;
 use warnings;
 
-use Carp;
+use Carp qw();
 
 use Moo;
 
