@@ -36,6 +36,7 @@ Remove and return $num items from the queue.
 
 sub dequeue {
     my ($self, $num) = @_;
+    $num //= 1;
     splice @{$self->queue}, 0, $num;
 }
 
