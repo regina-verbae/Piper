@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Test the Piper::Queue module
+## ABSTRACT: Test the Piper::Queue module/role
 #####################################################################
 
 use v5.22;
@@ -9,67 +9,135 @@ use warnings;
 
 use Test::Most;
 
-my $APP = "Piper::Queue";
+my $APP = $ENV{PIPER_QUEUE_CLASS} // 'Piper::Queue';
 
-use Piper::Queue;
+eval {
+    eval "require $APP";
+    $APP->import;
+};
+
+if ($@) {
+    die "Could not import $APP: $@";
+}
 
 #####################################################################
 
-my $QUEUE = Piper::Queue->new();
+my $QUEUE = $APP->new();
 
-# Test enqueue
-{
-    subtest "$APP - enqueue" => sub {
-        $QUEUE->enqueue(1..5);
-        is_deeply(
-            $QUEUE->queue,
-            [ 1..5 ],
-            "ok"
+# Enqueue tested implicitly, since we can't make assumptions
+#   about internal structures or any serialize/thaw behaviors
+
+my %TEST = (
+    'simple scalars' => {
+        data => [ 1..5 ],
+    },
+    'complex data structures' => {
+        data => [
+            { hashref => { arrayref => [], scalar => 'scalar' } },
+            [qw(mix the main structure types)],
+            [ { hashref2 => { arrayref2 => [], scalar2 => 'scalar2' } } ],
+            { scalar3 => 'scalar3',
+                hashref3 => { arrayref3 => [ hashref4 => { scalar4 => 'scalar4' } ] }
+            },
+            [ ], #empty!
+            { }, #empty!
+        ],
+    },
+);
+
+my $obj_num = 0;
+$TEST{'blessed objects'} = {
+    data => [
+        map {
+            my $struct = $_;
+            $obj_num++;
+            bless $struct, "BLESSED::OBJECT$obj_num"
+        } @{$TEST{'complex data structures'}{data}}
+    ],
+    extra => sub {
+        my ($got, $exp, $message) = @_;
+        cmp_deeply(
+            $got,
+            (ref $exp eq 'ARRAY'
+                ? [ map { isa(ref $_) } @$exp ]
+                : isa(ref $exp)
+            ),
+            "$message (objects maintained blessing)"
         );
-    };
-}
+    },
+};
 
-# Test dequeue
-{
-    subtest "$APP - dequeue" => sub {
+for my $test (keys %TEST) {
+    subtest "$APP - $test" => sub {
+        my @items = @{$TEST{$test}{data}};
+
+        is($QUEUE->ready, 0, 'ready - before enqueue');
+        
+        $QUEUE->enqueue(@items);
+
+        is($QUEUE->ready, @items, 'ready - after enqueue');
+
+        my $got = [ $QUEUE->dequeue(2) ];
+        my $exp = [ splice @items, 0, 2 ];
+
         is_deeply(
-           	[ $QUEUE->dequeue(2) ],
-           	[ 1..2 ],
-           	"dequeue multiple"
-       	);
+            $got,
+            $exp,
+            'dequeue multiple'
+        );
 
-       	is_deeply(
-        	[ $QUEUE->dequeue ],
-           	[ 3 ],
-           	"dequeue default - wantarray"
-       	);
+        if (exists $TEST{$test}{extra}) {
+            $TEST{$test}{extra}->($got, $exp, 'dequeue multiple');
+        }
 
-		is($QUEUE->dequeue, 4, "dequeue default - no wantarray");
+        is($QUEUE->ready, @items, 'ready - after dequeue');
 
-       	is_deeply(
-           	[ $QUEUE->dequeue(5) ],
-           	[ 5 ],
-           	"requested greater than ready"
-       	);
+        $got = [ $QUEUE->dequeue ];
+        $exp = [ shift @items ];
 
-       	is_deeply(
-           	[ $QUEUE->dequeue ],
-           	[ ],
-           	"empty"
-       	);
-   	};
-}
+        is_deeply(
+            $got,
+            $exp,
+            'dequeue default - wantarray'
+        );
 
-# Test ready
-{
-    subtest "$APP - ready" => sub {
-        is($QUEUE->ready, 0, "empty");
+        if (exists $TEST{$test}{extra}) {
+            $TEST{$test}{extra}->($got, $exp, 'dequeue default - wantarray');
+        }
 
-        $QUEUE->enqueue(1..4);
-        is($QUEUE->ready, 4, "non-empty");
+        $got = $QUEUE->dequeue;
+        $exp = shift @items;
 
-        $QUEUE->dequeue(2);
-        is($QUEUE->ready, 2, "after dequeue");
+        is_deeply(
+            $got,
+            $exp,
+            'dequeue default - no wantarray'
+        );
+
+        if (exists $TEST{$test}{extra}) {
+            $TEST{$test}{extra}->($got, $exp, 'dequeue default - no wantarray');
+        }
+
+        $got = [ $QUEUE->dequeue( scalar @items + 3 ) ];
+        $exp = [ @items ];
+
+        is_deeply(
+            $got,
+            $exp,
+            'dequeue - requested greater than ready'
+        );
+
+        if (exists $TEST{$test}{extra}) {
+            $TEST{$test}{extra}->($got, $exp, 'dequeue - requested greater than ready');
+        }
+
+        is($QUEUE->ready, 0, 'ready - empty');
+
+        is_deeply(
+            [ $QUEUE->dequeue ],
+            [ ],
+            'dequeue - empty'
+        );
     };
 }
 
