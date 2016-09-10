@@ -15,11 +15,27 @@ use Types::Standard qw(ClassName);
 use Moo;
 use namespace::clean;
 
+=head1 CONSTRUCTOR
+
+=head2 new
+
+=cut
+
+=head1 ATTRIBUTES
+
+=head2 batch_size
+
+=cut
+
 has batch_size => (
     is => 'lazy',
     isa => PositiveInt,
     default => 50,
 );
+
+=head2 logger_class
+
+=cut
 
 has logger_class => (
     is => 'lazy',
@@ -34,6 +50,10 @@ has logger_class => (
     },
     default => 'Piper::Logger',
 );
+
+=head2 queue_class
+
+=cut
 
 has queue_class => (
     is => 'lazy',

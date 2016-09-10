@@ -30,6 +30,12 @@ Ex:
 
 =cut
 
+=head1 ATTRIBUTES
+
+=head2 path
+
+=cut
+
 has path => (
     is => 'ro',
     isa => ArrayRef[Str],

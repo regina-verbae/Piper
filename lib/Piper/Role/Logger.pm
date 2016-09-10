@@ -14,53 +14,6 @@ use Types::Common::Numeric qw(PositiveOrZeroNum);
 
 use Moo::Role;
 
-=head1 ATTRIBUTES
-
-=head2 debug, verbose
-
-May be a positive integer or zero, though there are
-currently only two debug and two verbosity levels,
-so 0, 1, or 2 will suffice.
-
-These attributes will be set upon initialization of
-a Piper object based on any debug/verbose values
-provided via the Piper object's options during
-construction.
-
-Alternatively, these can be set manually at any time
-after initialization with $self->verbose($val) or
-$self->debug($val).
-
-Both attributes have an environment variable override
-which can be used to trump the values set by a program.
-
-    $ENV{PIPER_VERBOSE}
-    $ENV{PIPER_DEBUG}
-
-=cut
-
-has debug => (
-    is => 'rw',
-    isa => PositiveOrZeroNum,
-    coerce => sub {
-        # Environment variable always wins
-        my $value = shift;
-        return $ENV{PIPER_DEBUG} // $value;
-    },
-    default => 0,
-);
-
-has verbose => (
-    is => 'rw',
-    isa => PositiveOrZeroNum,
-    coerce => sub {
-        # Environment variable always wins
-        my $value = shift;
-        return $ENV{PIPER_VERBOSE} // $value;
-    },
-    default => 0,
-);
-
 =head1 REQUIRES
 
 This role requires the definition of the following
@@ -121,5 +74,52 @@ This method should issue a warning.
 =cut
 
 requires 'WARN';
+
+=head1 ATTRIBUTES
+
+=head2 debug, verbose
+
+May be a positive integer or zero, though there are
+currently only two debug and two verbosity levels,
+so 0, 1, or 2 will suffice.
+
+These attributes will be set upon initialization of
+a Piper object based on any debug/verbose values
+provided via the Piper object's options during
+construction.
+
+Alternatively, these can be set manually at any time
+after initialization with $self->verbose($val) or
+$self->debug($val).
+
+Both attributes have an environment variable override
+which can be used to trump the values set by a program.
+
+    $ENV{PIPER_VERBOSE}
+    $ENV{PIPER_DEBUG}
+
+=cut
+
+has debug => (
+    is => 'rw',
+    isa => PositiveOrZeroNum,
+    coerce => sub {
+        # Environment variable always wins
+        my $value = shift;
+        return $ENV{PIPER_DEBUG} // $value;
+    },
+    default => 0,
+);
+
+has verbose => (
+    is => 'rw',
+    isa => PositiveOrZeroNum,
+    coerce => sub {
+        # Environment variable always wins
+        my $value = shift;
+        return $ENV{PIPER_VERBOSE} // $value;
+    },
+    default => 0,
+);
 
 1;

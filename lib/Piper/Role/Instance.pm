@@ -19,6 +19,26 @@ use Moo::Role;
 
 with qw(Piper::Role::Queue);
 
+=head1 REQUIRES
+
+=head2 isnt_exhausted
+
+=cut
+
+requires 'isnt_exhausted';
+
+=head2 process_batch
+
+=cut
+
+requires 'process_batch';
+
+=head1 ATTRIBUTES
+
+=head2 args
+
+=cut
+
 has args => (
     is => 'rwp',
     isa => ArrayRef,
@@ -34,6 +54,10 @@ has args => (
     },
 );
 
+=head2 children
+
+=cut
+
 has children => (
     is => 'ro',
     # Must contain at least one child
@@ -43,6 +67,218 @@ has children => (
     required => 0,
     predicate => 1,
 );
+
+=head2 directory
+
+=cut
+
+has directory => (
+    is => 'lazy',
+    isa => HashRef,
+    builder => sub {
+        my ($self) = @_;
+        return {} unless $self->has_children;
+        my %dir;
+        for my $child (@{$self->children}) {
+            $dir{$child->path->name} = $child;
+        }
+        return \%dir;
+    },
+);
+
+=head2 drain
+
+=cut
+
+has drain => (
+    is => 'lazy',
+    handles => [qw(dequeue ready)],
+    builder => sub {
+        my ($self) = @_;
+        if ($self->has_parent) {
+            return $self->parent->follower->{$self};
+        }
+        else {
+            return $self->main->config->queue_class->new();
+        }
+    },
+);
+
+=head2 follower
+
+=cut
+
+#TODO: make this a method called by children
+has follower => (
+    is => 'lazy',
+    isa => HashRef,
+    builder => sub {
+        my ($self) = @_;
+        return {} unless $self->has_children;
+        my %follow;
+        for my $index (0..$#{$self->children}) {
+            if (defined $self->children->[$index + 1]) {
+                $follow{$self->children->[$index]} =
+                    $self->children->[$index + 1];
+            }
+            else {
+                $follow{$self->children->[$index]} = $self->drain;
+            }
+        }
+        return \%follow;
+    },
+);
+
+=head2 logger
+
+=cut
+
+has logger => (
+    is => 'lazy',
+    isa => ConsumerOf['Piper::Role::Logger'],
+    handles => 'Piper::Role::Logger',
+    builder => sub {
+        my ($self) = @_;
+        
+        if ($self->has_parent) {
+            return $self->main->logger;
+        }
+        else {
+            return $self->main->config->logger_class->new(
+                $self->has_extra ? $self->extra : ()
+            );
+        }
+    },
+);
+
+# Cute little trick to auto-insert the instance object
+# as first argument, since $self will become the logger
+# object and lose access to paths/labels/etc.
+around [qw(INFO DEBUG WARN ERROR)] => sub {
+    my ($orig, $self) = splice @_, 0, 2;
+    if (ref $_[0]) {
+        $self->$orig(@_);
+    }
+    else {
+        $self->$orig($self, @_);
+    }
+};
+
+=head2 main
+
+=cut
+
+has main => (
+    is => 'lazy',
+    isa => ConsumerOf['Piper::Role::Instance'],
+    weak_ref => 1,
+    builder => sub {
+        my ($self) = @_;
+        my $parent = $self;
+        while ($parent->has_parent) {
+            $parent = $parent->parent;
+        }
+        return $parent;
+    },
+);
+
+=head2 parent
+
+=cut
+
+has parent => (
+    is => 'rwp',
+    isa => ConsumerOf['Piper::Role::Instance'],
+    # Setting a parent will introduce a self-reference
+    weak_ref => 1,
+    required => 0,
+    predicate => 1,
+);
+
+=head2 path
+
+=cut
+
+has path => (
+    is => 'lazy',
+    isa => InstanceOf['Piper::Path'],
+    builder => sub {
+        my ($self) = @_;
+
+        return $self->has_parent
+            ? $self->parent->path->child($self->label)
+            : Piper::Path->new($self->label);
+    },
+);
+
+=head2 queue
+
+=cut
+
+has queue => (
+    is => 'lazy',
+    isa => ConsumerOf['Piper::Role::Queue'],
+    handles => [qw(enqueue)],
+    builder => sub {
+        my ($self) = @_;
+        if ($self->has_children) {
+            return $self->children->[0];
+        }
+        else {
+            return $self->main->config->queue_class->new();
+        }
+    },
+);
+
+around enqueue => sub {
+    my ($orig, $self, @args) = @_;
+
+    if (!$self->is_enabled) {
+        # Bypass - go straight to drain
+        $self->INFO("Skipping disabled process", @args);
+        $self->drain->enqueue(@args);
+        return;
+    }
+
+    my @items;
+    if ($self->has_filter) {
+        my ($skip, $queue) = part {
+            $self->filter->($_)
+        } @args;
+
+        @items = @$queue if defined $queue;
+
+        if (defined $skip) {
+            $self->INFO("Filtered items to next handler", @$skip);
+            $self->drain->enqueue(@$skip);
+        }
+    }
+    else {
+        @items = @args;
+    }
+
+    return unless @items;
+
+    $self->INFO("Queueing items", @items);
+    $self->$orig(@items);
+};
+
+=head2 segment
+
+=cut
+
+has segment => (
+    is => 'ro',
+    isa => ConsumerOf['Piper::Role::Segment'],
+    handles => 'Piper::Role::Segment',
+    required => 1,
+);
+
+=head1 METHODS
+
+=head2 descendant($path, $referrer)
+
+=cut
 
 sub descendant {
     my ($self, $path, $referrer) = @_;
@@ -103,33 +339,9 @@ sub descendant {
     return $descend;
 }
 
-has directory => (
-    is => 'lazy',
-    isa => HashRef,
-    builder => sub {
-        my ($self) = @_;
-        return {} unless $self->has_children;
-        my %dir;
-        for my $child (@{$self->children}) {
-            $dir{$child->path->name} = $child;
-        }
-        return \%dir;
-    },
-);
+=head2 eject(@items)
 
-has drain => (
-    is => 'lazy',
-    handles => [qw(dequeue ready)],
-    builder => sub {
-        my ($self) = @_;
-        if ($self->has_parent) {
-            return $self->parent->follower->{$self};
-        }
-        else {
-            return $self->main->config->queue_class->new();
-        }
-    },
-);
+=cut
 
 sub eject {
     my $self = shift;
@@ -137,12 +349,20 @@ sub eject {
     $self->main->drain->enqueue(@_);
 }
 
+=head2 emit(@items)
+
+=cut
+
 sub emit {
     my $self = shift;
     $self->INFO("Emitting", @_);
     # Just collect in the drain
     $self->drain->enqueue(@_);
 }
+
+=head2 find_segment($location)
+
+=cut
 
 sub find_segment {
     my ($self, $location) = @_;
@@ -174,26 +394,9 @@ sub find_segment {
     return $cache->{$location};
 }
 
-#TODO: make this a method called by children
-has follower => (
-    is => 'lazy',
-    isa => HashRef,
-    builder => sub {
-        my ($self) = @_;
-        return {} unless $self->has_children;
-        my %follow;
-        for my $index (0..$#{$self->children}) {
-            if (defined $self->children->[$index + 1]) {
-                $follow{$self->children->[$index]} =
-                    $self->children->[$index + 1];
-            }
-            else {
-                $follow{$self->children->[$index]} = $self->drain;
-            }
-        }
-        return \%follow;
-    },
-);
+=head2 get_batch_size
+
+=cut
 
 sub get_batch_size {
     my ($self) = @_;
@@ -205,11 +408,19 @@ sub get_batch_size {
     return $size;
 }
 
+=head2 inject(@items)
+
+=cut
+
 sub inject {
     my $self = shift;
     $self->INFO('Injecting to '.$self->main, @_);
     $self->main->enqueue(@_);
 }
+
+=head2 injectAfter($location, @items)
+
+=cut
 
 sub injectAfter {
     my $self = shift;
@@ -221,6 +432,10 @@ sub injectAfter {
     $segment->drain->enqueue(@_);
 }
 
+=head2 injectAt($location, @items)
+
+=cut
+
 sub injectAt {
     my $self = shift;
     my $location = shift;
@@ -230,6 +445,10 @@ sub injectAt {
     $self->INFO("Injecting to $location", @_);
     $segment->enqueue(@_);
 }
+
+=head2 is_enabled
+
+=cut
 
 sub is_enabled {
     my ($self) = @_;
@@ -244,78 +463,18 @@ sub is_enabled {
     return 1;
 }
 
+=head2 is_exhausted
+
+=cut
+
 sub is_exhausted {
     my ($self) = @_;
     return !$self->isnt_exhausted;
 }
 
-requires 'isnt_exhausted';
+=head2 pending
 
-has logger => (
-    is => 'lazy',
-    isa => ConsumerOf['Piper::Role::Logger'],
-    handles => 'Piper::Role::Logger',
-    builder => sub {
-        my ($self) = @_;
-        
-        if ($self->has_parent) {
-            return $self->main->logger;
-        }
-        else {
-            return $self->main->config->logger_class->new(
-                $self->has_extra ? $self->extra : ()
-            );
-        }
-    },
-);
-
-# Cute little trick to auto-insert the instance object
-# as first argument, since $self will become the logger
-# object and lose access to paths/labels/etc.
-around [qw(INFO DEBUG WARN ERROR)] => sub {
-    my ($orig, $self) = splice @_, 0, 2;
-    if (ref $_[0]) {
-        $self->$orig(@_);
-    }
-    else {
-        $self->$orig($self, @_);
-    }
-};
-
-has main => (
-    is => 'lazy',
-    isa => ConsumerOf['Piper::Role::Instance'],
-    weak_ref => 1,
-    builder => sub {
-        my ($self) = @_;
-        my $parent = $self;
-        while ($parent->has_parent) {
-            $parent = $parent->parent;
-        }
-        return $parent;
-    },
-);
-
-has parent => (
-    is => 'rwp',
-    isa => ConsumerOf['Piper::Role::Instance'],
-    # Setting a parent will introduce a self-reference
-    weak_ref => 1,
-    required => 0,
-    predicate => 1,
-);
-
-has path => (
-    is => 'lazy',
-    isa => InstanceOf['Piper::Path'],
-    builder => sub {
-        my ($self) = @_;
-
-        return $self->has_parent
-            ? $self->parent->path->child($self->label)
-            : Piper::Path->new($self->label);
-    },
-);
+=cut
 
 sub pending {
     my ($self) = @_;
@@ -326,6 +485,10 @@ sub pending {
         return $self->queue->ready;
     }
 }
+
+=head2 pressure
+
+=cut
 
 # Metric for "how full" the pending queue is
 sub pressure {
@@ -338,67 +501,14 @@ sub pressure {
     }
 }
 
-requires 'process_batch';
+=head2 recycle(@items)
 
-has queue => (
-    is => 'lazy',
-    isa => ConsumerOf['Piper::Role::Queue'],
-    handles => [qw(enqueue)],
-    builder => sub {
-        my ($self) = @_;
-        if ($self->has_children) {
-            return $self->children->[0];
-        }
-        else {
-            return $self->main->config->queue_class->new();
-        }
-    },
-);
-
-around enqueue => sub {
-    my ($orig, $self, @args) = @_;
-
-    if (!$self->is_enabled) {
-        # Bypass - go straight to drain
-        $self->INFO("Skipping disabled process", @args);
-        $self->drain->enqueue(@args);
-        return;
-    }
-
-    my @items;
-    if ($self->has_filter) {
-        my ($skip, $queue) = part {
-            $self->filter->($_)
-        } @args;
-
-        @items = @$queue if defined $queue;
-
-        if (defined $skip) {
-            $self->INFO("Filtered items to next handler", @$skip);
-            $self->drain->enqueue(@$skip);
-        }
-    }
-    else {
-        @items = @args;
-    }
-
-    return unless @items;
-
-    $self->INFO("Queueing items", @items);
-    $self->$orig(@items);
-};
+=cut
 
 sub recycle {
     my $self = shift;
     $self->INFO("Recycling", @_);
     $self->enqueue(@_);
 }
-
-has segment => (
-    is => 'ro',
-    isa => ConsumerOf['Piper::Role::Segment'],
-    handles => 'Piper::Role::Segment',
-    required => 1,
-);
 
 1;

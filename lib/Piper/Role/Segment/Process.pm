@@ -14,11 +14,19 @@ use Types::Standard qw(CodeRef);
 
 use Moo::Role;
 
+=head1 ATTRIBUTES
+
+=head2 handler
+
+=cut
+
 has handler => (
     is => 'ro',
     isa => CodeRef,
     required => 1,
 );
+
+=head1 METHODS
 
 =head2 init
 

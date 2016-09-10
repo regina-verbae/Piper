@@ -14,6 +14,12 @@ use Types::Standard qw(ArrayRef ConsumerOf Tuple slurpy);
 
 use Moo::Role;
 
+=head1 ATTRIBUTES
+
+=head2 children
+
+=cut
+
 has children => (
     is => 'rwp',
     # Force to contain at least one child
@@ -22,6 +28,8 @@ has children => (
     ],
     required => 1,
 );
+
+=head1 METHODS
 
 =head2 init
 

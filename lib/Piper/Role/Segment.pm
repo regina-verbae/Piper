@@ -21,6 +21,33 @@ This role contains attributes and methods that apply
 to each pipeline segment, both individual handlers
 and sub-pipes.
 
+=head1 REQUIRES
+
+=head2 init
+
+=cut
+
+requires 'init';
+
+around init => sub {
+    my ($orig, $self, @args) = @_;
+    state $call = 0;
+    $call++;
+    my $main = $call == 1 ? 1 : 0;
+
+    my $instance = $self->$orig();
+
+    if ($main) {
+        # Set the args in the main instance
+        $instance->_set_args(\@args);
+
+        # Reset $call (global) for other objects
+        $call = 0;
+    }
+
+    return $instance;
+};
+
 =head1 ATTRIBUTES
 
 =head2 batch_size
@@ -127,27 +154,6 @@ has id => (
         return "$base$id->{$base}";
     },
 );
-
-requires 'init';
-
-around init => sub {
-    my ($orig, $self, @args) = @_;
-    state $call = 0;
-    $call++;
-    my $main = $call == 1 ? 1 : 0;
-
-    my $instance = $self->$orig();
-
-    if ($main) {
-        # Set the args in the main instance
-        $instance->_set_args(\@args);
-
-        # Reset $call (global) for other objects
-        $call = 0;
-    }
-
-    return $instance;
-};
 
 =head2 label
 

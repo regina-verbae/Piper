@@ -22,6 +22,12 @@ with 'Piper::Role::Queue';
 
 =cut
 
+=head1 ATTRIBUTES
+
+=head2 queue
+
+=cut
+
 has queue => (
     is => 'ro',
     isa => ArrayRef,
