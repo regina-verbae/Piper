@@ -76,7 +76,7 @@ my $PROC = Piper->new(
     friend => sub{},
     {
         batch_size => 3,
-        filter => sub{},
+        select => sub{},
         label => 'main',
     },
 );
@@ -152,16 +152,16 @@ for my $test (
             }
         };
 
-        # Test filter
-        subtest "$NAME - filter" => sub {
-            ok($TEST->has_filter, 'predicate');
+        # Test select
+        subtest "$NAME - select" => sub {
+            ok($TEST->has_select, 'predicate');
 
-            ok(!$DEFAULT->has_filter, 'predicate default');
+            ok(!$DEFAULT->has_select, 'predicate default');
 
             if ($NAME !~ /^initialized/) {
                 throws_ok {
-                    Piper->new(sub{}, { filter => 'blah' })
-                } qr/did not pass type constraint "CodeRef"/, 'bad filter';
+                    Piper->new(sub{}, { select => 'blah' })
+                } qr/did not pass type constraint "CodeRef"/, 'bad select';
             }
         };
 

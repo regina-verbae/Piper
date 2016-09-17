@@ -76,45 +76,6 @@ has config => (
     builder => sub { require Piper::Config; return Piper::Config->new() },
 );
 
-=head2 filter
-
-A coderef used to filter items sent to this
-segment.
-
-It will be run on each item attempting to queue
-to this segment.  If the filter returns true, the
-item will be queued.  Otherwise, the item will
-skip this segment and continue to the next adjacent
-segment.
-
-The item will be localized to $_, as well as
-passed in as the first argument.  These example
-filters are equivalent.
-
-    # This handler only accepts digit inputs
-    sub { /^\d+$/ }
-    sub { $_ =~ /^\d+$/ }
-    sub { $_[0] =~ /^\d+$/ }
-
-=cut
-
-has filter => (
-    is => 'ro',
-    isa => CodeRef,
-    # Closure to enable sub to use $_ instead of $_[0],
-    #   though $_[0] will also work
-    coerce => sub {
-        my $orig = shift;
-        CodeRef->assert_valid($orig);
-        return sub {
-            my $item = shift;
-            local $_ = $item;
-            $orig->($item);
-        };
-    },
-    predicate => 1,
-);
-
 =head2 enabled
 
 Set this to false to disable the segment for all
@@ -174,6 +135,44 @@ has label => (
         my $self = shift;
         return $self->id;
     },
+);
+
+=head2 select
+
+A coderef which can be used to subset the items
+processed by the segment.
+
+The coderef runs on each item attempting to queue
+to the segment.  If it returns true, the item is
+queued.  Otherwise, the item skips the segment and
+proceeds to the next adjacent segment.
+
+Each item is localized to $_, as well as passed in
+as the first argument.  These example select
+subroutines are equivalent:
+
+    # This handler only accepts digit inputs
+    sub { /^\d+$/ }
+    sub { $_ =~ /^\d+$/ }
+    sub { $_[0] =~ /^\d+$/ }
+
+=cut
+
+has select => (
+    is => 'ro',
+    isa => CodeRef,
+    # Closure to enable sub to use $_ instead of $_[0],
+    #   though $_[0] will also work
+    coerce => sub {
+        my $orig = shift;
+        CodeRef->assert_valid($orig);
+        return sub {
+            my $item = shift;
+            local $_ = $item;
+            $orig->($item);
+        };
+    },
+    predicate => 1,
 );
 
 1;

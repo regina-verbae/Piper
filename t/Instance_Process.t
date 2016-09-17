@@ -45,8 +45,8 @@ use Piper::Process;
 
 my $TEST = Piper::Process->new(half => {
     batch_size => 2,
-    # Non-explicitly testing that filter $_ closure works
-    filter => sub { $_ % 2 == 0 },
+    # Non-explicitly testing that select $_ closure works
+    select => sub { $_ % 2 == 0 },
     handler => sub {
         my ($instance, $batch, @args) = @_;
         return (map { int( $_ / 2 ) } @$batch);
@@ -144,26 +144,26 @@ my $TEST = Piper::Process->new(half => {
     };
 }
 
-# Test filtering
+# Test select
 {
-    subtest "$APP - filtering" => sub {
-        # Odd number filtered out
+    subtest "$APP - select" => sub {
+        # Odd number skipped
         $TEST->enqueue(1..5);
         
-        is($TEST->pending, 2, 'filtered not in pending');
-        is($TEST->ready, 3, 'filtered items ready');
+        is($TEST->pending, 2, 'selected items pending');
+        is($TEST->ready, 3, 'skipped items ready');
         is_deeply(
             [ $TEST->dequeue(5) ],
             [ 1, 3, 5 ],
-            'filter succeeded'
+            'select succeeded'
         );
 
         $TEST->process_batch;
-        is($TEST->ready, 2, 'non-filtered items processed');
+        is($TEST->ready, 2, 'selected items processed');
         is_deeply(
             [ $TEST->dequeue(2) ],
             [ 1, 2 ],
-            'non-filtered items processed correctly'
+            'selected items processed correctly'
         );
     };
 }
@@ -244,8 +244,8 @@ my $TEST = Piper::Process->new(half => {
 
         my $RECYCLER = Piper::Process->new(mod_power_2 => {
             batch_size => 3,
-            # Non-explicitly testing that filter $_ closure still allows use of $_[0]
-            filter => sub { $_[0] % 2 == 0 },
+            # Non-explicitly testing that select $_ closure still allows use of $_[0]
+            select => sub { $_[0] % 2 == 0 },
             handler => sub {
                 my ($instance, $batch, @args) = @_;
                 my @things = map { int( $_ / 2 ) } @$batch;

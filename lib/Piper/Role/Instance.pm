@@ -241,9 +241,9 @@ around enqueue => sub {
     }
 
     my @items;
-    if ($self->has_filter) {
+    if ($self->has_select) {
         my ($skip, $queue) = part {
-            $self->filter->($_)
+            $self->select->($_)
         } @args;
 
         @items = @$queue if defined $queue;
