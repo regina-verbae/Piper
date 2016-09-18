@@ -211,7 +211,7 @@ use Piper;
         my $SMALL = Piper->new(
             half => {
                 batch_size => 2,
-                select => sub { $_ % 2 == 0 },
+                allow => sub { $_ % 2 == 0 },
                 handler => sub {
                     my ($instance, $batch) = @_;
                     return (map { int( $_ / 2 ) } @$batch);
@@ -306,25 +306,25 @@ use Piper;
             ok(!$SMALL->isnt_exhausted, 'emptied - isnt_exhausted');
         };
 
-        # Test select
-        subtest "$APP - select" => sub {
+        # Test allow
+        subtest "$APP - allow" => sub {
             # Odd numbers skipped
             $SMALL->enqueue(1..5);
 
-            is($SMALL->pending, 2, 'selected items pending');
+            is($SMALL->pending, 2, 'allowed items pending');
             is($SMALL->ready, 3, 'skipped items ready');
             is_deeply(
                 [ $SMALL->dequeue(5) ],
                 [ 1, 3, 5 ],
-                'select succeeded'
+                'allow succeeded'
             );
 
             $SMALL->process_batch;
-            is($SMALL->ready, 2, 'selected items processed');
+            is($SMALL->ready, 2, 'allowed items processed');
             is_deeply(
                 [ $SMALL->dequeue(2) ],
                 [ 1, 2 ],
-                'selected items processed correctly'
+                'allowed items processed correctly'
             );
         };
 
@@ -408,7 +408,7 @@ use Piper;
 
             my $RECYCLER = Piper->new(
                 mod_power_2 => {
-                    select => sub { $_[0] % 2 == 0 },
+                    allow => sub { $_[0] % 2 == 0 },
                     handler => sub {
                         my ($instance, $batch) = @_;
                         my @things = map { int( $_ / 2 ) } @$batch;
@@ -527,7 +527,7 @@ subtest "$APP - nested pipes" => sub {
             make_even => {
                 batch_size => 4,
                 # Non-explicitly testing that pass-in still works with $_ closure
-                select => sub { $_[0] % 2 != 0 },
+                allow => sub { $_[0] % 2 != 0 },
                 handler => sub {
                     my ($instance, $batch, @args) = @_;
                     my @return = map { $_ - 1 } @$batch;
@@ -542,8 +542,8 @@ subtest "$APP - nested pipes" => sub {
                     return;
                 },
             },
-            # Non-explicitly testing that select $_ closure works
-            { select => sub { /^-?\d+$/ }, }
+            # Non-explicitly testing that allow $_ closure works
+            { allow => sub { /^-?\d+$/ }, }
         ),
         {
             batch_size => 2,
@@ -657,26 +657,26 @@ subtest "$APP - nested pipes" => sub {
         ok(!$TEST->isnt_exhausted, 'emptied - isnt_exhausted');
     };
 
-    # Test select
-    subtest "$APP - select" => sub {
+    # Test allow
+    subtest "$APP - allow" => sub {
         $TEST->enqueue(1..8);
         $TEST->process_batch;
 
-        is($GRAND2->pending, 1, 'one item selected');
+        is($GRAND2->pending, 1, 'one item allowed');
         is($GRAND2->ready, 1, 'one item skipped');
 
         $TEST->process_batch;
         $TEST->process_batch;
         $TEST->process_batch;
 
-        is($GRAND2->pending, 4, 'expected items selected');
+        is($GRAND2->pending, 4, 'expected items allowed');
         is($GRAND2->ready, 4, 'expected items skipped');
 
         $TEST->process_batch;
         is_deeply(
             [ $TEST->dequeue(8) ],
             [ 4, 6, 8, 10, 4, 6, 8, 10 ],
-            'expected output received - select was successful'
+            'expected output received - allow was successful'
         );
     };
 

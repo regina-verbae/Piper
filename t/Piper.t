@@ -76,7 +76,7 @@ my $PROC = Piper->new(
     friend => sub{},
     {
         batch_size => 3,
-        select => sub{},
+        allow => sub{},
         label => 'main',
     },
 );
@@ -152,16 +152,16 @@ for my $test (
             }
         };
 
-        # Test select
-        subtest "$NAME - select" => sub {
-            ok($TEST->has_select, 'predicate');
+        # Test allow
+        subtest "$NAME - allow" => sub {
+            ok($TEST->has_allow, 'predicate');
 
-            ok(!$DEFAULT->has_select, 'predicate default');
+            ok(!$DEFAULT->has_allow, 'predicate default');
 
             if ($NAME !~ /^initialized/) {
                 throws_ok {
-                    Piper->new(sub{}, { select => 'blah' })
-                } qr/did not pass type constraint "CodeRef"/, 'bad select';
+                    Piper->new(sub{}, { allow => 'blah' })
+                } qr/did not pass type constraint "CodeRef"/, 'bad allow';
             }
         };
 

@@ -61,7 +61,7 @@ my $SUCCESSFUL_NEW;
 my $PROC = Piper::Process->new(
     process => {
         batch_size => 3,
-        select => sub { $_[0] =~ /^\d+$/ },
+        allow => sub { $_[0] =~ /^\d+$/ },
         handler => sub{},
     }
 );
@@ -137,16 +137,16 @@ for my $test (
             }
         };
 
-        # Test select
-        subtest "$NAME - select" => sub {
-            ok($TEST->has_select, 'predicate');
+        # Test allow
+        subtest "$NAME - allow" => sub {
+            ok($TEST->has_allow, 'predicate');
 
-            ok(!$DEFAULT->has_select, 'predicate default');
+            ok(!$DEFAULT->has_allow, 'predicate default');
 
             if ($NAME !~ /^initialized/) {
                 throws_ok {
-                    Piper::Process->new({ handler => sub{}, select => 'blah' })
-                } qr/did not pass type constraint "CodeRef"/, 'bad select';
+                    Piper::Process->new({ handler => sub{}, allow => 'blah' })
+                } qr/did not pass type constraint "CodeRef"/, 'bad allow';
             }
         };
     };

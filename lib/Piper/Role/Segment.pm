@@ -59,6 +59,44 @@ around init => sub {
 
 =head1 ATTRIBUTES
 
+=head2 allow
+
+An optional coderef which can be used to subset which
+items can be processed by the segment.
+
+The coderef runs on each item attempting to queue
+to the segment.  If it returns true, the item is
+queued.  Otherwise, the item skips the segment and
+proceeds to the next adjacent segment.
+
+Each item is localized to $_, and is also passed in
+as the first argument.  These example 'allow'
+subroutines are equivalent:
+
+    # This handler only accepts digit inputs
+    sub { /^\d+$/ }
+    sub { $_ =~ /^\d+$/ }
+    sub { $_[0] =~ /^\d+$/ }
+
+=cut
+
+has allow => (
+    is => 'ro',
+    isa => CodeRef,
+    # Closure to enable sub to use $_ instead of $_[0],
+    #   though $_[0] will also work
+    coerce => sub {
+        my $orig = shift;
+        CodeRef->assert_valid($orig);
+        return sub {
+            my $item = shift;
+            local $_ = $item;
+            $orig->($item);
+        };
+    },
+    predicate => 1,
+);
+
 =head2 batch_size
 
 The number of items to process at a time for
@@ -152,45 +190,12 @@ has label => (
     },
 );
 
-=head2 select
-
-A coderef which can be used to subset the items
-processed by the segment.
-
-The coderef runs on each item attempting to queue
-to the segment.  If it returns true, the item is
-queued.  Otherwise, the item skips the segment and
-proceeds to the next adjacent segment.
-
-Each item is localized to $_, as well as passed in
-as the first argument.  These example select
-subroutines are equivalent:
-
-    # This handler only accepts digit inputs
-    sub { /^\d+$/ }
-    sub { $_ =~ /^\d+$/ }
-    sub { $_[0] =~ /^\d+$/ }
-
-=cut
-
-has select => (
-    is => 'ro',
-    isa => CodeRef,
-    # Closure to enable sub to use $_ instead of $_[0],
-    #   though $_[0] will also work
-    coerce => sub {
-        my $orig = shift;
-        CodeRef->assert_valid($orig);
-        return sub {
-            my $item = shift;
-            local $_ = $item;
-            $orig->($item);
-        };
-    },
-    predicate => 1,
-);
-
 =head1 METHODS
+
+=head2 has_allow
+
+A boolean indicating whether or not an 'allow'
+attribute exists for this segment.
 
 =head2 has_batch_size
 
@@ -203,11 +208,6 @@ A boolean indicating whether or not the
 'extra' attribute has been set, which
 indicates that extra (unknown) attributes
 were given to the constructor of the segment.
-
-=head2 has_select
-
-A boolean indicating whether or not a 'select'
-attribute exists for this segment.
 
 =cut
 

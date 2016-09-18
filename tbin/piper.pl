@@ -43,7 +43,7 @@ my $pipe = Piper->new(
             return (map { $_ * 6 } @$batch);
         },
         div_two => {
-            select => sub { $_[0] % 2 == 0 },
+            allow => sub { $_[0] % 2 == 0 },
             handler => sub {
                 my ($instance, $batch, @args) = @_;
                 return (map { int( $_ / 2 ) } @$batch);

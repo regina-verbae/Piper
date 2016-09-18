@@ -235,15 +235,15 @@ around enqueue => sub {
     }
 
     my @items;
-    if ($self->has_select) {
+    if ($self->has_allow) {
         my ($skip, $queue) = part {
-            $self->select->($_)
+            $self->allow->($_) ? 1 : 0
         } @args;
 
         @items = @$queue if defined $queue;
 
         if (defined $skip) {
-            $self->INFO("Filtered items to next handler", @$skip);
+            $self->INFO("Disallowed items emitted to next handler", @$skip);
             $self->drain->enqueue(@$skip);
         }
     }
