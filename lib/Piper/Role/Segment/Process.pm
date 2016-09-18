@@ -41,13 +41,6 @@ pipes or processes in the pipeline:
 See Piper::Role::Instance for an explantion
 of these methods.
 
-Also, anything returned from the handler will
-be auto-emitted to the next ajacent segment.
-If a handler wishes to handle its data explicitly
-instead of using the auto-emit feature, it
-should end with an explicit 'return;' to avoid
-auto-emitting an implicit return.
-
 =cut
 
 has handler => (

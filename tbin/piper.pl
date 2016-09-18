@@ -31,22 +31,21 @@ my $pipe = Piper->new(
             $instance->injectAt('transform/div_two', $batch->[-1]);
             $weird--;
         }
-        return;
     },
     subtract_one => sub {
         my ($instance, $batch, @args) = @_;
-        return (map { $_ - 1 } @$batch);
+        $instance->emit(map { $_ - 1 } @$batch);
     },
     transform => Piper->new(
         mult_six => sub {
             my ($instance, $batch, @args) = @_;
-            return (map { $_ * 6 } @$batch);
+            $instance->emit(map { $_ * 6 } @$batch);
         },
         div_two => {
             allow => sub { $_[0] % 2 == 0 },
             handler => sub {
                 my ($instance, $batch, @args) = @_;
-                return (map { int( $_ / 2 ) } @$batch);
+                $instance->emit(map { int( $_ / 2 ) } @$batch);
             },
             #enabled => 0,
         },

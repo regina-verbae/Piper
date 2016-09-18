@@ -214,7 +214,7 @@ use Piper;
                 allow => sub { $_ % 2 == 0 },
                 handler => sub {
                     my ($instance, $batch) = @_;
-                    return (map { int( $_ / 2 ) } @$batch);
+                    $instance->emit(map { int( $_ / 2 ) } @$batch);
                 },
             },
             {
@@ -375,7 +375,6 @@ use Piper;
                 double => sub {
                     my ($instance, $batch) = @_;
                     $instance->emit(map { $_ * 2 } @$batch);
-                    return;
                 },
                 {
                     batch_size => 2,
@@ -420,7 +419,6 @@ use Piper;
                                 $instance->emit($thing);
                             }
                         }
-                        return;
                     },
                 },
                 { batch_size => 3 },
@@ -489,7 +487,6 @@ use Piper;
                     if ($args[0] eq 'arg') {
                         $instance->emit(@$batch);
                     }
-                    return;
                 },
             },
         )->init('arg');
@@ -522,7 +519,6 @@ subtest "$APP - nested pipes" => sub {
                         $instance->emit($item);
                     }
                 }
-                return;
             },
             make_even => {
                 batch_size => 4,
@@ -539,7 +535,6 @@ subtest "$APP - nested pipes" => sub {
                             $instance->emit($item);
                         }
                     }
-                    return;
                 },
             },
             # Non-explicitly testing that allow $_ closure works

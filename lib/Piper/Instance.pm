@@ -46,17 +46,11 @@ sub process_batch {
         my @batch = $self->queue->dequeue($num);
         $self->INFO("Processing batch", @batch);
 
-        #TODO: Remove auto-emitting return values?
-        my @things = $self->segment->handler->(
+        $self->segment->handler->(
             $self,
             \@batch,
             @{$self->args}
         );
-
-        if (@things) {
-            $self->INFO("Auto-emitting", @things);
-            $self->drain->enqueue(@things);
-        }
     }
 }
 

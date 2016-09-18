@@ -27,7 +27,6 @@ use Piper::Process;
                 if ($args[0] eq 'arg') {
                     $instance->emit(@$batch);
                 }
-                return;
             },
         })->init('arg');
 
@@ -49,7 +48,7 @@ my $TEST = Piper::Process->new(half => {
     allow => sub { $_ % 2 == 0 },
     handler => sub {
         my ($instance, $batch, @args) = @_;
-        return (map { int( $_ / 2 ) } @$batch);
+        $instance->emit(map { int( $_ / 2 ) } @$batch);
     },
 })->init();
 
@@ -211,7 +210,6 @@ my $TEST = Piper::Process->new(half => {
             handler => sub {
                 my ($instance, $batch, @args) = @_;
                 $instance->emit(map { $_ * 2 } @$batch);
-                return;
             },
         })->init();
 
@@ -257,7 +255,6 @@ my $TEST = Piper::Process->new(half => {
                         $instance->emit($thing);
                     }
                 }
-                return;
             },
         })->init();
 
