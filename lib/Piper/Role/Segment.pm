@@ -18,12 +18,17 @@ use Moo::Role;
 =head1 DESCRIPTION
 
 This role contains attributes and methods that apply
-to each pipeline segment, both individual handlers
-and sub-pipes.
+to each pipeline segment, both individual process
+handlers and pipelines.
 
 =head1 REQUIRES
 
 =head2 init
+
+This role requires the definition of an init method
+which initializes the segment as a pipeline
+instance and prepares it for data processing.  The
+method must return the created pipeline instance.
 
 =cut
 
@@ -33,6 +38,9 @@ around init => sub {
     my ($orig, $self, @args) = @_;
     state $call = 0;
     $call++;
+    # The first time this is called (per Piper object)
+    #   will be from the main (or top-level) pipeline
+    #   segment
     my $main = $call == 1 ? 1 : 0;
 
     my $instance = $self->$orig();
@@ -41,7 +49,8 @@ around init => sub {
         # Set the args in the main instance
         $instance->_set_args(\@args);
 
-        # Reset $call (global) for other objects
+        # Reset $call so any other Piper objects can
+        #   determine their main segment
         $call = 0;
     }
 
@@ -53,8 +62,8 @@ around init => sub {
 =head2 batch_size
 
 The number of items to process at a time for
-the segment.  Will inherit from a parent if
-not provided.
+the segment.  Segments inherit the batch_size
+of its parent(s) if not provided.
 
 =cut
 
@@ -78,8 +87,8 @@ has config => (
 
 =head2 enabled
 
-Set this to false to disable the segment for all
-items.  Defaults to true.
+Boolean indicating that the segment is enabled and
+can accept items for processing.  Defaults to true.
 
 =cut
 
@@ -89,7 +98,13 @@ has enabled => (
     default => 1,
 );
 
-#TODO explain
+=head2 extra
+
+Any extra (unknown) attributes passed during initial
+construction of the segment are stored in this
+hashref.
+
+=cut
 
 has extra => (
     is => 'rwp',
@@ -121,9 +136,9 @@ has id => (
 A label for this segment.  If no label is provided, the
 segment's id will be used.
 
-Labels are particularly needed if handlers wish to use
-the injectAt method.  Otherwise, labels are still very
-useful for debugging.
+Labels are necessary if any handlers wish to use the
+injectAt or injectAfter methods.  Otherwise, labels are
+primarily useful for logging and/or debugging.
 
 =cut
 
@@ -174,5 +189,26 @@ has select => (
     },
     predicate => 1,
 );
+
+=head1 METHODS
+
+=head2 has_batch_size
+
+A boolean indicating whether the segment
+has an assigned batch_size.
+
+=head2 has_extra
+
+A boolean indicating whether or not the
+'extra' attribute has been set, which
+indicates that extra (unknown) attributes
+were given to the constructor of the segment.
+
+=head2 has_select
+
+A boolean indicating whether or not a 'select'
+attribute exists for this segment.
+
+=cut
 
 1;

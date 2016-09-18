@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: 
+## ABSTRACT: Role for an instance of a segment
 #####################################################################
 
 package Piper::Role::Instance;

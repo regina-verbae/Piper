@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Base role for pipeline segments
+## ABSTRACT: Role for process handlers
 #####################################################################
 
 package Piper::Role::Segment::Process;
@@ -18,6 +18,36 @@ use Moo::Role;
 
 =head2 handler
 
+The data-processing subroutine for this segment.
+
+The arguments provided to the handler are as follows:
+
+    $instance - the instance corresponding to the segment
+    $batch    - an arrayref of items to process
+    @args     - the init arguments (if any) provided
+                at the initialization of the pipeline
+
+Via the provided $instance object, the handler
+has several options for sending data to other
+pipes or processes in the pipeline:
+
+    $instance->eject(@data)
+    $instance->emit(@data)
+    $instance->inject(@data)
+    $instance->injectAfter($location, @data)
+    $instance->injectAt($location, @data)
+    $instance->recycle(@data)
+
+See Piper::Role::Instance for an explantion
+of these methods.
+
+Also, anything returned from the handler will
+be auto-emitted to the next ajacent segment.
+If a handler wishes to handle its data explicitly
+instead of using the auto-emit feature, it
+should end with an explicit 'return;' to avoid
+auto-emitting an implicit return.
+
 =cut
 
 has handler => (
@@ -29,6 +59,9 @@ has handler => (
 =head1 METHODS
 
 =head2 init
+
+Returns a Piper::Instance object for this
+segment.
 
 =cut
 

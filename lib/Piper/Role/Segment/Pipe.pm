@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Base role for pipeline segments
+## ABSTRACT: Role for a pipeline of segments
 #####################################################################
 
 package Piper::Role::Segment::Pipe;
@@ -18,6 +18,12 @@ use Moo::Role;
 
 =head2 children
 
+An arrayref of segments that together make up this
+pipeline.  Child segments can be processes or
+pipes.
+
+This attribute is required.
+
 =cut
 
 has children => (
@@ -32,6 +38,10 @@ has children => (
 =head1 METHODS
 
 =head2 init
+
+Returns a Piper::Instance object for this pipeline.
+It also initializes all the child segments and sets
+itself as the parent for each child instance.
 
 =cut
 

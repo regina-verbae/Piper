@@ -14,16 +14,17 @@ use Types::Common::Numeric qw(PositiveOrZeroNum);
 
 use Moo::Role;
 
+#TODO: Look into making this Log::Any-compatible
+
 =head1 REQUIRES
 
-This role requires the definition of the following
-methods.
-
-Each method will be provided the following arguments:
+This role requires the definition of the below
+methods, each of which will be provided the
+following arguments:
 
   $segment  # The pipeline segment calling the method
   $message  # The (string) message sent
-  @items    # Any specific items the message is about
+  @items    # Items that provide context to the message
 
 =head2 DEBUG
 
