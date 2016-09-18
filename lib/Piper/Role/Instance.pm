@@ -21,12 +21,6 @@ with qw(Piper::Role::Queue);
 
 =head1 REQUIRES
 
-=head2 isnt_exhausted
-
-=cut
-
-requires 'isnt_exhausted';
-
 =head2 process_batch
 
 =cut
@@ -469,7 +463,22 @@ sub is_enabled {
 
 sub is_exhausted {
     my ($self) = @_;
-    return !$self->isnt_exhausted;
+    
+    # Attempt to get some data ready
+    while (!$self->ready and $self->pending) {
+        $self->process_batch;
+    }
+
+    return $self->ready ? 0 : 1;
+}
+
+=head2 isnt_exhausted
+
+=cut
+
+sub isnt_exhausted {
+    my ($self) = @_;
+    return !$self->is_exhausted;
 }
 
 =head2 pending

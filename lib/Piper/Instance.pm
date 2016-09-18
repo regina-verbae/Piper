@@ -24,17 +24,6 @@ use overload (
     fallback => 1,
 );
 
-sub isnt_exhausted {
-    my ($self) = @_;
-    
-    # Try to get something ready
-    while(!$self->ready and $self->pending) {
-        $self->process_batch;
-    }
-
-    return $self->ready ? 1 : 0;
-}
-
 sub process_batch {
     my ($self) = @_;
     if ($self->has_children) {

@@ -127,20 +127,20 @@ my $TEST = Piper::Process->new(half => {
 # Test exhaustion
 {
     subtest "$APP - exhaustion" => sub {
-        ok(!$TEST->isnt_exhausted, 'empty - isnt_exhausted');
         ok($TEST->is_exhausted, 'empty - is_exhausted');
+        ok(!$TEST->isnt_exhausted, 'empty - isnt_exhausted');
 
         $TEST->enqueue(3);
 
-        ok($TEST->isnt_exhausted, 'queued - isnt_exhausted');
         ok(!$TEST->is_exhausted, 'queued - is_exhausted');
+        ok($TEST->isnt_exhausted, 'queued - isnt_exhausted');
 
         while ($TEST->isnt_exhausted) {
             $TEST->dequeue;
         }
 
-        ok(!$TEST->isnt_exhausted, 'emptied - isnt_exhausted');
         ok($TEST->is_exhausted, 'emptied - is_exhausted');
+        ok(!$TEST->isnt_exhausted, 'emptied - isnt_exhausted');
     };
 }
 

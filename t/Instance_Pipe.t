@@ -290,20 +290,20 @@ use Piper;
 
         # Test exhaustion
         subtest "$APP - exhaustion" => sub {
-            ok(!$SMALL->isnt_exhausted, 'empty - isnt_exhausted');
             ok($SMALL->is_exhausted, 'empty - is_exhausted');
+            ok(!$SMALL->isnt_exhausted, 'empty - isnt_exhausted');
 
             $SMALL->enqueue(2);
 
-            ok($SMALL->isnt_exhausted, 'queued - isnt_exhausted');
             ok(!$SMALL->is_exhausted, 'queued - is_exhausted');
+            ok($SMALL->isnt_exhausted, 'queued - isnt_exhausted');
 
             while ($SMALL->isnt_exhausted) {
                 $SMALL->dequeue;
             }
 
-            ok(!$SMALL->isnt_exhausted, 'emptied - isnt_exhausted');
             ok($SMALL->is_exhausted, 'emptied - is_exhausted');
+            ok(!$SMALL->isnt_exhausted, 'emptied - isnt_exhausted');
         };
 
         # Test select
@@ -641,20 +641,20 @@ subtest "$APP - nested pipes" => sub {
 
     # Test exhaustion
     subtest "$APP - exhaustion" => sub {
-        ok(!$TEST->isnt_exhausted, 'empty - isnt_exhausted');
         ok($TEST->is_exhausted, 'empty - is_exhausted');
+        ok(!$TEST->isnt_exhausted, 'empty - isnt_exhausted');
 
         $TEST->enqueue(1);
 
-        ok($TEST->isnt_exhausted, 'queued - isnt_exhausted');
         ok(!$TEST->is_exhausted, 'queued - is_exhausted');
+        ok($TEST->isnt_exhausted, 'queued - isnt_exhausted');
 
         while ($TEST->isnt_exhausted) {
             $TEST->dequeue;
         }
         
-        ok(!$TEST->isnt_exhausted, 'emptied - isnt_exhausted');
         ok($TEST->is_exhausted, 'emptied - is_exhausted');
+        ok(!$TEST->isnt_exhausted, 'emptied - isnt_exhausted');
     };
 
     # Test select
