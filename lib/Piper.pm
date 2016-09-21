@@ -9,14 +9,14 @@ use v5.10;
 use strict;
 use warnings;
 
+use Piper::Instance;
 use Piper::Process;
+use Types::Standard qw(ArrayRef ConsumerOf Tuple slurpy);
 
 use Moo;
+use namespace::autoclean;
 
-with qw(
-    Piper::Role::Segment
-    Piper::Role::Segment::Pipe
-);
+with qw(Piper::Role::Segment);
 
 use overload (
     q{""} => sub { $_[0]->label },
@@ -86,6 +86,55 @@ sub BUILD {
     }
     
     $self->_set_extra(\%extra) if keys %extra;
+}
+
+=head1 ATTRIBUTES
+
+=head2 children
+
+An arrayref of segments that together make up this
+pipeline.  Child segments can be processes or
+pipes.
+
+This attribute is required.
+
+=cut
+
+has children => (
+    is => 'rwp',
+    # Force to contain at least one child
+    isa => Tuple[ConsumerOf['Piper::Role::Segment'],
+        slurpy ArrayRef[ConsumerOf['Piper::Role::Segment']]
+    ],
+    required => 1,
+);
+
+=head1 METHODS
+
+=head2 init
+
+Returns a Piper::Instance object for this pipeline.
+It also initializes all the child segments and sets
+itself as the parent for each child instance.
+
+=cut
+
+sub init {
+    my $self = shift;
+
+    my $instance = Piper::Instance->new(
+		segment => $self,
+		children => [
+			map { $_->init } @{$self->children}
+		],
+	);
+
+    # Set parents for children
+    for my $child (@{$instance->children}) {
+        $child->_set_parent($instance);
+    }
+
+    return $instance;
 }
 
 1;

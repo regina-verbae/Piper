@@ -9,12 +9,13 @@ use v5.10;
 use strict;
 use warnings;
 
-use Moo;
+use Piper::Instance;
+use Types::Standard qw(CodeRef);
 
-with qw(
-    Piper::Role::Segment
-    Piper::Role::Segment::Process
-);
+use Moo;
+use namespace::clean;
+
+with qw(Piper::Role::Segment);
 
 use overload (
     q{""} => sub { $_[0]->label },
@@ -67,6 +68,58 @@ sub BUILD {
     }
     
     $self->_set_extra(\%extra) if keys %extra;
+}
+
+=head1 ATTRIBUTES
+
+=head2 handler
+
+The data-processing subroutine for this segment.
+
+The arguments provided to the handler are as follows:
+
+    $instance - the instance corresponding to the segment
+    $batch    - an arrayref of items to process
+    @args     - the init arguments (if any) provided
+                at the initialization of the pipeline
+
+Via the provided $instance object, the handler
+has several options for sending data to other
+pipes or processes in the pipeline:
+
+    $instance->eject(@data)
+    $instance->emit(@data)
+    $instance->inject(@data)
+    $instance->injectAfter($location, @data)
+    $instance->injectAt($location, @data)
+    $instance->recycle(@data)
+
+See Piper::Role::Instance for an explantion
+of these methods.
+
+=cut
+
+has handler => (
+    is => 'ro',
+    isa => CodeRef,
+    required => 1,
+);
+
+=head1 METHODS
+
+=head2 init
+
+Returns a Piper::Instance object for this
+segment.
+
+=cut
+
+sub init {
+    my ($self) = @_;
+
+    return Piper::Instance->new(
+        segment => $self,
+    );
 }
 
 1;
