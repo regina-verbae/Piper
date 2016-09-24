@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Basic log/message-handling class using Carp
+## ABSTRACT: Log/message handler for Piper
 #####################################################################
 
 package Piper::Logger;

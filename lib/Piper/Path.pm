@@ -19,20 +19,53 @@ use overload (
     fallback => 1,
 );
 
+=head1 SYNOPSIS
+
+    use Piper::Path;
+
+    # grandparent/parent/child
+    my $path = Piper::Path->new(qw(
+        grandparent parent child
+    ));
+
+    # grandparent/parent/child/grandchild
+    $path->child('grandchild');
+
+    # (qw(grandparent parent child))
+    $path->split;
+
+    # child
+    $path->name;
+
+    # 'grandparent/parent/child'
+    $path->stringify;
+    "$path";
+
+=head1 DESCRIPTION
+
+Simple filesystem-like representation of a
+pipeline segment's placement in the pipeline,
+relative to containing segments.
+
 =head1 CONSTRUCTOR
 
-=head2 new(@segments)
+=head2 new(@path_segments)
 
-Ex:
-    new(qw(grandparent parent child))
-    new(qw(grandparent/parent child))
-    new($parent_path_object, qw(child))
+Creates a Piper::Path object from the given
+path segments.
 
-=cut
+Segments may be single path elements (similar
+to a file name), joined path elements (with '/'),
+or Piper::Path objects.
 
-=head1 ATTRIBUTES
+The following create equivalent objects:
 
-=head2 path
+    Piper::Path->new(qw(grandparent parent child));
+    Piper::Path->new(qw(grandparent/parent child));
+    Piper::Path->new(
+        Piper::Path->new(qw(grandparent parent)),
+        qw(child)
+    );
 
 =cut
 
@@ -65,8 +98,8 @@ around BUILDARGS => sub {
 
 =head2 child(@segments)
 
-Returns a new path object representing the appropriate
-child of $self.
+Returns a new Piper::Path object representing the
+appropriate child of $self.
 
     $path                     # grampa/parent
     $path->child(qw(child))   # grampa/parent/child
