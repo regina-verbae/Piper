@@ -61,8 +61,8 @@ around init => sub {
 
 =head2 allow
 
-An optional coderef which can be used to subset which
-items can be processed by the segment.
+An optional coderef used to subset the items which
+are allowed to be processed by the segment.
 
 The coderef runs on each item attempting to queue
 to the segment.  If it returns true, the item is
@@ -100,7 +100,7 @@ has allow => (
 =head2 batch_size
 
 The number of items to process at a time for
-the segment.  Segments inherit the batch_size
+the segment.  A segment inherits the batch_size
 of its parent(s) if not provided.
 
 =cut

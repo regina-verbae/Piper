@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: 
+## ABSTRACT: A data-processing unit for a pipeline
 #####################################################################
 
 package Piper::Process;
@@ -23,7 +23,6 @@ use overload (
 );
 
 my $CONFIG;
-
 sub import {
     my $class = shift;
     if (@_) {
@@ -31,6 +30,37 @@ sub import {
         $CONFIG = Piper::Config->new(@_);
     }
 }
+
+=head1 DESCRIPTION
+
+A single data-processing unit for the Piper pipeline system.
+
+=head1 CONSTRUCTOR
+
+=head2 new(@args)
+
+The constructor accepts the following patterns for @args:
+
+    Piper::Process->new({
+        label      => $label,    # recommended
+        handler    => $handler,  # required
+        batch_size => $num,      # optional
+        allow      => $allow,    # optional
+        enabled    => $enabled,  # default: 1
+    });
+
+    Piper::Process->new(
+        $label => {
+            handler    => $handler,
+            batch_size => $num,
+            allow      => $allow,
+            enabled    => $enabled,
+        }
+    );
+
+    Piper::Process->new($label => $handler);
+
+=cut
 
 around BUILDARGS => sub {
     my ($orig, $self, @args) = @_;
@@ -72,6 +102,36 @@ sub BUILD {
 
 =head1 ATTRIBUTES
 
+=head2 allow
+
+An optional coderef used to subset the items which
+are allowed to be processed by the segment.
+
+The coderef runs on each item attempting to queue
+to the segment.  If it returns true, the item is
+queued.  Otherwise, the item skips the segment and
+proceeds to the next adjacent segment.
+
+Each item is localized to $_, and is also passed in
+as the first argument.  These example 'allow'
+subroutines are equivalent:
+
+    # This handler only accepts digit inputs
+    sub { /^\d+$/ }
+    sub { $_ =~ /^\d+$/ }
+    sub { $_[0] =~ /^\d+$/ }
+
+=head2 batch_size
+
+The number of items to process at a time for
+the segment.  A segment inherits the batch_size
+of its parent(s) if not provided.
+
+=head2 enabled
+
+Boolean indicating that the segment is enabled and
+can accept items for processing.  Defaults to true.
+
 =head2 handler
 
 The data-processing subroutine for this segment.
@@ -83,9 +143,9 @@ The arguments provided to the handler are as follows:
     @args     - the init arguments (if any) provided
                 at the initialization of the pipeline
 
-Via the provided $instance object, the handler
-has several options for sending data to other
-pipes or processes in the pipeline:
+Via the provided $instance object, the handler has several
+options for sending data to other pipes or processes in
+the pipeline:
 
     $instance->eject(@data)
     $instance->emit(@data)
@@ -94,8 +154,22 @@ pipes or processes in the pipeline:
     $instance->injectAt($location, @data)
     $instance->recycle(@data)
 
-See Piper::Role::Instance for an explantion
-of these methods.
+See Piper::Instance for an explantion of these methods.
+
+Example handler:
+
+    sub {
+        my ($instance, $batch) = @_;
+
+        my @results;
+        for my $item (@$batch) {
+            $item = <transform item>;
+            push @results, $item;
+        }
+
+        # Send results to next segment of pipeline
+        $instance->emit(@results);
+    }
 
 =cut
 
@@ -105,12 +179,43 @@ has handler => (
     required => 1,
 );
 
+=head2 id
+
+A globally uniq ID for the segment.  This is primarily
+useful for debugging only.
+
+=head2 label
+
+A label for this segment.  If no label is provided, the
+segment's id will be used.
+
+Labels are necessary if any handlers wish to use the
+injectAt or injectAfter methods.  Otherwise, labels are
+primarily useful for logging and/or debugging.
+
+Stringification of a Piper::Process object is overloaded
+to return its label:
+
+    my $process = Piper::Process->new($label => sub {...});
+
+    $process->label; # $label
+    "$process";      # $label
+
 =head1 METHODS
+
+=head2 has_allow
+
+A boolean indicating whether or not an 'allow' attribute
+exists for this segment.
+
+=head2 has_batch_size
+
+A boolean indicating whether the segment has an assigned
+batch_size.
 
 =head2 init
 
-Returns a Piper::Instance object for this
-segment.
+Returns a Piper::Instance object for this segment.
 
 =cut
 

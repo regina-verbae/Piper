@@ -62,7 +62,7 @@ Verify the functionality of a new queue class by
 downloading the Piper tests and running the
 following:
 
-  PIPER_QUEUE_CLASS=<New queue class> prove t/Queue.t
+  PIPER_QUEUE_CLASS=<New queue class> prove t/01_Queue.t
 
 =cut
 
