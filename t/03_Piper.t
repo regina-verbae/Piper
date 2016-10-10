@@ -153,16 +153,22 @@ my $SUCCESSFUL_NEW;
 
 my $PROC = Piper->new(
     child => sub{},
-    friend => sub{},
+    friend => {
+        handler => sub{},
+        debug => 1,
+        verbose => 1,
+    },
     {
         batch_size => 3,
         allow => sub{},
         label => 'main',
+        debug => 0,
+        verbose => 0,
     },
 );
 $SUCCESSFUL_NEW++;
 
-my $DEFAULT = Piper->new(sub{});
+my $DEFAULT = Piper->new(child => sub{}, friend => sub{});
 
 my $INIT;
 my $DEFAULT_INIT;
@@ -249,6 +255,40 @@ for my $test (
         subtest "$APP - children" => sub {
             ok(@{$TEST->children}, 'has children');
         };
+
+        # Test debug/verbose
+        for my $type (qw(debug verbose)) {
+            my $has = "has_$type";
+            my $clear = "clear_$type";
+            subtest "$NAME - $type" => sub {
+                ok($TEST->$has(), 'predicate');
+                ok($TEST->children->[1]->$has(), 'predicate of child');
+
+                ok(!$DEFAULT->$has(), 'predicate default');
+                ok(!$DEFAULT->children->[1]->$has(), 'predicate default of child');
+
+                $DEFAULT->$type(1);
+                ok($DEFAULT->$has(), 'predicate after set');
+                is($DEFAULT->$type(), 1, 'writer ok');
+
+                $DEFAULT->children->[1]->$type(1);
+                ok($DEFAULT->children->[1]->$has(), 'predicate of child after set');
+                is($DEFAULT->children->[1]->$type(), 1, 'writer of child ok');
+
+                $DEFAULT->$clear();
+                ok(!$DEFAULT->$has(), 'clearer ok');
+
+                is($DEFAULT->children->[1]->$type(), 1, 'cleared parent does not affect child');
+                $DEFAULT->children->[1]->$clear();
+                ok(!$DEFAULT->children->[1]->$has(), 'clearer of child ok');
+
+                if ($NAME !~ /^initialized/) {
+                    throws_ok {
+                        Piper::Process->new({ handler => sub{}, $type => -1 });
+                    } qr/Must be a number greater than or equal to zero/, "bad $type";
+                }
+            };
+        }
     };
 }
 

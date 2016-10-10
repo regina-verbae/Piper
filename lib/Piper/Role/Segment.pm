@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 use Types::Standard qw(Bool CodeRef HashRef InstanceOf);
-use Types::Common::Numeric qw(PositiveInt);
+use Types::Common::Numeric qw(PositiveInt PositiveOrZeroNum);
 use Types::Common::String qw(NonEmptySimpleStr);
 
 use Moo::Role;
@@ -123,6 +123,20 @@ has config => (
     builder => sub { require Piper::Config; return Piper::Config->new() },
 );
 
+=head2 debug
+
+Debug level for this segment.
+
+=cut
+
+has debug => (
+    is => 'rw',
+    isa => PositiveOrZeroNum,
+    required => 0,
+    predicate => 1,
+    clearer => 1,
+);
+
 =head2 enabled
 
 Boolean indicating that the segment is enabled and
@@ -134,20 +148,6 @@ has enabled => (
     is => 'rw',
     isa => Bool,
     default => 1,
-);
-
-=head2 extra
-
-Any extra (unknown) attributes passed during initial
-construction of the segment are stored in this
-hashref.
-
-=cut
-
-has extra => (
-    is => 'rwp',
-    isa => HashRef,
-    predicate => 1,
 );
 
 =head2 id
@@ -190,7 +190,29 @@ has label => (
     },
 );
 
+=head2 verbose
+
+Verbosity level for this segment.
+
+=cut
+
+has verbose => (
+    is => 'rw',
+    isa => PositiveOrZeroNum,
+    required => 0,
+    predicate => 1,
+    clearer => 1,
+);
+
 =head1 METHODS
+
+=head2 clear_debug
+
+Clears any assigned debug level for the segment.
+
+=head2 clear_verbose
+
+Clears any assigned verbosity level for the segment.
 
 =head2 has_allow
 
@@ -202,12 +224,13 @@ attribute exists for this segment.
 A boolean indicating whether the segment
 has an assigned batch_size.
 
-=head2 has_extra
+=head2 has_debug
 
-A boolean indicating whether or not the
-'extra' attribute has been set, which
-indicates that extra (unknown) attributes
-were given to the constructor of the segment.
+A boolean indicating whether the segment has an assigned debug level.
+
+=head2 has_verbose
+
+A boolean indicating whether the segment has an assigned verbosity level.
 
 =cut
 

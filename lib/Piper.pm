@@ -102,17 +102,6 @@ around BUILDARGS => sub {
     );
 };
 
-sub BUILD {
-    my ($self, $args) = @_;
-
-    my %extra;
-    for my $key (keys %$args) {
-        $extra{$key} = $args->{$key} unless $self->can($key);
-    }
-    
-    $self->_set_extra(\%extra) if keys %extra;
-}
-
 =head1 ATTRIBUTES
 
 =head2 children

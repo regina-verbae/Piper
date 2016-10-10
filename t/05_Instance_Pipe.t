@@ -238,6 +238,37 @@ use Piper;
             is($CHILD->parent->path, 'main', 'parent is pipe');
         };
 
+        # Test debug/verbose
+        for my $type (qw(debug verbose)) {
+            my $has = "has_$type";
+            my $clear = "clear_$type";
+            subtest "$APP - $type" => sub {
+                ok(!$SMALL->$has(), 'predicate');
+                ok(!$CHILD->$has(), 'child predicate');
+                is($SMALL->$type(), 0, 'default');
+                is($CHILD->$type(), 0, 'child default');
+
+                $SMALL->$type(1);
+                ok($SMALL->$has(), 'predicate after set');
+                ok(!$CHILD->$has(), 'child predicate not affected');
+                is($SMALL->$type(), 1, 'writer ok');
+                is($CHILD->$type(), 1, 'child inherits parent');
+
+                $CHILD->$type(2);
+                ok($CHILD->$has(), 'child predicate after set');
+                is($SMALL->$type(), 1, 'parent not affected by child');
+                is($CHILD->$type(), 2, 'child no longer inherits');
+
+                $CHILD->$clear();
+                ok(!$CHILD->$has(), 'child clearer ok');
+                is($SMALL->$type(), 1, 'parent unaffected by child clearer');
+                is($CHILD->$type(), 1, 'child inherits again');
+
+                $SMALL->$clear();
+                ok(!$SMALL->$has(), 'parent clearer ok');
+            };
+        }
+
         # Test get_batch_size
         subtest "$APP - get_batch_size" => sub {
             is($SMALL->get_batch_size, 4, 'pipe ok');
@@ -572,6 +603,37 @@ subtest "$APP - nested pipes" => sub {
             'main/integer', "grandchild's parent ok"
         );
     };
+
+    # Test debug/verbose
+    for my $type (qw(debug verbose)) {
+        my $has = "has_$type";
+        my $clear = "clear_$type";
+        subtest "$APP - $type" => sub {
+            ok(!$TEST->$has(), 'predicate');
+            ok(!$GRAND1->$has(), 'grandchild predicate');
+            is($TEST->$type(), 0, 'default');
+            is($GRAND1->$type(), 0, 'grandchild default');
+
+            $TEST->$type(1);
+            ok($TEST->$has(), 'predicate after set');
+            ok(!$GRAND1->$has(), 'grandchild predicate not affected');
+            is($TEST->$type(), 1, 'writer ok');
+            is($GRAND1->$type(), 1, 'grandchild inherits parent');
+
+            $GRAND1->$type(2);
+            ok($GRAND1->$has(), 'grandchild predicate after set');
+            is($TEST->$type(), 1, 'parent not affected by grandchild');
+            is($GRAND1->$type(), 2, 'grandchild no longer inherits');
+
+            $GRAND1->$clear();
+            ok(!$GRAND1->$has(), 'grandchild clearer ok');
+            is($TEST->$type(), 1, 'parent unaffected by grandchild clearer');
+            is($GRAND1->$type(), 1, 'grandchild inherits again');
+
+            $TEST->$clear();
+            ok(!$TEST->$has(), 'parent clearer ok');
+        };
+    }
 
     # Test get_batch_size
     subtest "$APP - get_batch_size" => sub {

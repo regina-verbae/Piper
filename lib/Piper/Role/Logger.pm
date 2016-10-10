@@ -18,9 +18,8 @@ use Moo::Role;
 
 =head1 REQUIRES
 
-This role requires the definition of the below
-methods, each of which will be provided the
-following arguments:
+This role requires the definition of the below methods, each of which will be
+provided the following arguments:
 
   $segment  # The pipeline segment calling the method
   $message  # The (string) message sent
@@ -28,23 +27,22 @@ following arguments:
 
 =head2 DEBUG
 
-This method is only called if debug > 0.
+This method is only called if $self->debug_level($segment) > 0.
 
 =cut
 
 requires 'DEBUG';
 
 around DEBUG => sub {
-    my ($orig, $self) = splice @_, 0, 2;
-    return unless $self->debug;
-    $self->$orig(@_);
+    my ($orig, $self, $instance) = splice @_, 0, 3;
+    return unless $self->debug_level($instance);
+    $self->$orig($instance, @_);
 };
 
 =head2 ERROR
 
-The method should cause a die or croak.  It will
-do so automatically if not done explicitly, though
-with an extremely generic and unhelpful message.
+The method should cause a die or croak.  It will do so automatically if not
+done explicitly, though with an extremely generic and unhelpful message.
 
 =cut
 
@@ -56,16 +54,17 @@ after ERROR => sub {
 
 =head2 INFO
 
-This method is only called if verbose > 0 or debug > 0.
+This method is only called if $self->verbose_level($segment) > 0 or
+$self->debug_level($segment) > 0.
 
 =cut
 
 requires 'INFO';
 
 around INFO => sub {
-    my ($orig, $self) = splice @_, 0, 2;
-    return unless $self->verbose or $self->debug;
-    $self->$orig(@_);
+    my ($orig, $self, $instance) = splice @_, 0, 3;
+    return unless $self->debug_level($instance) or $self->verbose_level($instance);
+    $self->$orig($instance, @_);
 };
 
 =head2 WARN
@@ -76,51 +75,28 @@ This method should issue a warning.
 
 requires 'WARN';
 
-=head1 ATTRIBUTES
+=head1 UTILITY METHODS
 
-=head2 debug, verbose
+=head2 debug_level($segment)
 
-May be a positive integer or zero, though there are
-currently only two debug and two verbosity levels,
-so 0, 1, or 2 will suffice.
+=head2 verbose_level($segment)
 
-These attributes will be set upon initialization of
-a Piper object based on any debug/verbose values
-provided via the Piper object's options during
-construction.
+These methods should be used to determine the appropriate debug and verbosity
+levels for the logger.  They honor the following environment variable overrides
+(if they exist) before falling back to the appropriate levels set by the given
+$segment:
 
-Alternatively, these can be set manually at any time
-after initialization with $self->verbose($val) or
-$self->debug($val).
-
-Both attributes have an environment variable override
-which can be used to trump the values set by a program.
-
-    $ENV{PIPER_VERBOSE}
-    $ENV{PIPER_DEBUG}
+    PIPER_DEBUG
+    PIPER_VERBOSE
 
 =cut
 
-has debug => (
-    is => 'rw',
-    isa => PositiveOrZeroNum,
-    coerce => sub {
-        # Environment variable always wins
-        my $value = shift;
-        return $ENV{PIPER_DEBUG} // $value;
-    },
-    default => 0,
-);
+sub debug_level {
+    return $ENV{PIPER_DEBUG} // $_[1]->debug;
+}
 
-has verbose => (
-    is => 'rw',
-    isa => PositiveOrZeroNum,
-    coerce => sub {
-        # Environment variable always wins
-        my $value = shift;
-        return $ENV{PIPER_VERBOSE} // $value;
-    },
-    default => 0,
-);
+sub verbose_level {
+    return $ENV{PIPER_VERBOSE} // $_[1]->verbose;
+}
 
 1;

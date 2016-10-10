@@ -63,6 +63,8 @@ my $PROC = Piper::Process->new(
         batch_size => 3,
         allow => sub { $_[0] =~ /^\d+$/ },
         handler => sub{},
+        debug => 0,
+        verbose => 0,
     }
 );
 $SUCCESSFUL_NEW++;
@@ -149,6 +151,30 @@ for my $test (
                 } qr/did not pass type constraint "CodeRef"/, 'bad allow';
             }
         };
+
+        # Test debug/verbose
+        for my $type (qw(debug verbose)) {
+            my $has = "has_$type";
+            my $clear = "clear_$type";
+            subtest "$NAME - $type" => sub {
+                ok($TEST->$has(), 'predicate');
+
+                ok(!$DEFAULT->$has(), 'predicate default');
+
+                $DEFAULT->$type(1);
+                ok($DEFAULT->$has(), 'predicate after set');
+                is($DEFAULT->$type(), 1, 'writer ok');
+
+                $DEFAULT->$clear();
+                ok(!$DEFAULT->$has(), 'clearer ok');
+
+                if ($NAME !~ /^initialized/) {
+                    throws_ok {
+                        Piper::Process->new({ handler => sub{}, $type => -1 });
+                    } qr/Must be a number greater than or equal to zero/, "bad $type";
+                }
+            };
+        }
     };
 }
 

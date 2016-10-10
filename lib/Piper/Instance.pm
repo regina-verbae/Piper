@@ -90,6 +90,32 @@ has children => (
     predicate => 1,
 );
 
+=head2 debug
+
+Debug level for this segment.  When accessing, inherits the debug level of any
+existing parent(s) if not explicitly set for this segment.
+
+To clear a previously-set debug level for a segment, simply set it to <undef>:
+
+    $segment->debug(undef);
+
+=cut
+
+around debug => sub {
+    my ($orig, $self) = splice @_, 0, 2;
+    if (@_) {
+        return $self->clear_debug if !defined $_[0];
+        return $self->$orig(@_);
+    }
+    else {
+        return $self->has_debug
+            ? $self->$orig()
+            : $self->has_parent
+                ? $self->parent->debug
+                : 0;
+    }
+};
+
 =head2 directory
 
 =cut
@@ -112,7 +138,7 @@ has directory => (
 
 =cut
 
-BEGIN {
+BEGIN { # Enables 'with Piper::Role::Queue'
 has drain => (
     is => 'lazy',
     handles => [qw(dequeue ready)],
@@ -168,9 +194,7 @@ has logger => (
             return $self->main->logger;
         }
         else {
-            return $self->main->config->logger_class->new(
-                $self->has_extra ? $self->extra : ()
-            );
+            return $self->main->config->logger_class->new();
         }
     },
 );
@@ -239,7 +263,7 @@ has path => (
 
 =cut
 
-BEGIN {
+BEGIN { # Enables 'with Piper::Role::Queue'
 has queue => (
     is => 'lazy',
     isa => ConsumerOf['Piper::Role::Queue'],
@@ -293,12 +317,41 @@ around enqueue => sub {
 
 =cut
 
+BEGIN { # So we can 'around' on debug/verbose
 has segment => (
     is => 'ro',
     isa => ConsumerOf['Piper::Role::Segment'],
     handles => 'Piper::Role::Segment',
     required => 1,
 );
+}
+
+=head2 verbose
+
+Verbosity level for this segment.  When accessing, inherits verbosity level of
+any existing parent(s) if not explicitly set for this segment.
+
+To clear a previously-set verbosity level for a segment, simply set it to
+<undef>:
+
+    $segment->verbose(undef);
+
+=cut
+
+around verbose => sub {
+    my ($orig, $self) = splice @_, 0, 2;
+    if (@_) {
+        return $self->clear_verbose if !defined $_[0];
+        return $self->$orig(@_);
+    }
+    else {
+        return $self->has_verbose
+            ? $self->$orig()
+            : $self->has_parent
+                ? $self->parent->verbose
+                : 0;
+    }
+};
 
 =head1 METHODS
 

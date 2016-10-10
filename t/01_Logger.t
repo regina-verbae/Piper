@@ -15,44 +15,39 @@ my $APP = "Piper::Logger";
 
 use Piper::Logger;
 
-my $SEGMENT = Test::Segment->new();
+delete $ENV{PIPER_VERBOSE};
+delete $ENV{PIPER_DEBUG};
 
 #####################################################################
 
-# Test debug/verbose
+my $LOGGER = Piper::Logger->new();
+my %TEST = (
+    default => Test::Segment->new(),
+    'verbose = 1' => Test::Segment->new(verbose => 1),
+    'verbose = 2' => Test::Segment->new(verbose => 2),
+    'debug = 1' => Test::Segment->new(debug => 1),
+    'debug = 2' => Test::Segment->new(debug => 2),
+    'verbose = 1; debug = 1' => Test::Segment->new(verbose => 1, debug => 1),
+    'verbose = 2; debug = 1' => Test::Segment->new(verbose => 2, debug => 1),
+    'verbose = 2; debug = 2' => Test::Segment->new(verbose => 2, debug => 2),
+);
+my @ARGS = ('message', qw(item1 item2));
+my $OVERRIDE_EXP = $LOGGER->make_message($TEST{'verbose = 2; debug = 2'}, @ARGS);
+
+# Test debug/verbose_level
 {
     for my $type (qw(debug verbose)) {
-        subtest "$APP - $type" => sub {
-            my $log = Piper::Logger->new();
-            is($log->$type(), 0, 'default');
-
-            $log->$type(1);
-            is($log->$type(), 1, 'writable');
-
-            dies_ok { $log->$type(-1) } 'dies on invalid flag';
-
-            local %ENV;
-            $ENV{uc("PIPER_$type")} = 2;
-            $log = Piper::Logger->new();
-            is($log->$type(), 2, "environment as default");
-            
-            $log->$type(0);
-            is($log->$type(), 2, "environment override");
+        my $method = "$type\_level";
+        subtest "$APP - $method" => sub {
+            for my $test (keys %TEST) {
+                is($LOGGER->$method($TEST{$test}), $TEST{$test}->$type(), $test);
+ 
+                local $ENV{uc("PIPER_$type")} = 1;
+                is($LOGGER->$method($TEST{$test}), 1, "$test - ENV override");
+            }
         };
     }
 }
-
-my %TEST = (
-    default => Piper::Logger->new(),
-    'verbose = 1' => Piper::Logger->new(verbose => 1),
-    'verbose = 2' => Piper::Logger->new(verbose => 2),
-    'debug = 1' => Piper::Logger->new(debug => 1),
-    'debug = 2' => Piper::Logger->new(debug => 2),
-    'verbose = 1; debug = 1' => Piper::Logger->new(verbose => 1, debug => 1),
-    'verbose = 2; debug = 1' => Piper::Logger->new(verbose => 2, debug => 1),
-    'verbose = 2; debug = 2' => Piper::Logger->new(verbose => 2, debug => 2),
-);
-my @ARGS = ($SEGMENT, 'message', qw(item1 item2));
 
 # Test make_message
 {
@@ -70,7 +65,7 @@ my @ARGS = ($SEGMENT, 'message', qw(item1 item2));
 
         for my $test (keys %TEST) {
             is(
-                $TEST{$test}->make_message(@ARGS),
+                $LOGGER->make_message($TEST{$test}, @ARGS),
                 $EXP{$test},
                 $test
             );
@@ -85,12 +80,27 @@ my @ARGS = ($SEGMENT, 'message', qw(item1 item2));
 
         for my $test (keys %TEST) {
             my $capture = capture_stderr {
-                $TEST{$test}->INFO(@ARGS)
+                $LOGGER->INFO($TEST{$test}, @ARGS)
             };
             chomp $capture;
             is($capture,
-                $EXP{$test} ? 'Info: '.$TEST{$test}->make_message(@ARGS) : '',
+                $EXP{$test} ? 'Info: '.$LOGGER->make_message($TEST{$test}, @ARGS) : '',
                 $test
+            );
+        }
+
+        local %ENV;
+        $ENV{PIPER_VERBOSE} = 2;
+        $ENV{PIPER_DEBUG} = 2;
+
+        for my $test (keys %TEST) {
+            my $capture = capture_stderr {
+                $LOGGER->INFO($TEST{$test}, @ARGS)
+            };
+            chomp $capture;
+            is($capture,
+                "Info: $OVERRIDE_EXP",
+                "$test - ENV override"
             );
         }
     };
@@ -103,12 +113,27 @@ my @ARGS = ($SEGMENT, 'message', qw(item1 item2));
 
         for my $test (keys %TEST) {
             my $capture = capture_stderr {
-                $TEST{$test}->DEBUG(@ARGS)
+                $LOGGER->DEBUG($TEST{$test}, @ARGS)
             };
             chomp $capture;
             is($capture,
-                $EXP{$test} ? 'Info: '.$TEST{$test}->make_message(@ARGS) : '',
+                $EXP{$test} ? 'Info: '.$LOGGER->make_message($TEST{$test}, @ARGS) : '',
                 $test
+            );
+        }
+
+        local %ENV;
+        $ENV{PIPER_VERBOSE} = 2;
+        $ENV{PIPER_DEBUG} = 2;
+
+        for my $test (keys %TEST) {
+            my $capture = capture_stderr {
+                $LOGGER->DEBUG($TEST{$test}, @ARGS)
+            };
+            chomp $capture;
+            is($capture,
+                "Info: $OVERRIDE_EXP",
+                "$test - ENV override"
             );
         }
     };
@@ -119,8 +144,18 @@ my @ARGS = ($SEGMENT, 'message', qw(item1 item2));
     subtest "$APP - WARN" => sub {
         for my $test (keys %TEST) {
             warning_is {
-                $TEST{$test}->WARN(@ARGS)
-            } { carped => 'Warning: '.$TEST{$test}->make_message(@ARGS) }, $test;
+                $LOGGER->WARN($TEST{$test}, @ARGS)
+            } { carped => 'Warning: '.$LOGGER->make_message($TEST{$test}, @ARGS) }, $test;
+        }
+
+        local %ENV;
+        $ENV{PIPER_VERBOSE} = 2;
+        $ENV{PIPER_DEBUG} = 2;
+
+        for my $test (keys %TEST) {
+            warning_is {
+                $LOGGER->WARN($TEST{$test}, @ARGS)
+            } { carped => "Warning: $OVERRIDE_EXP" }, "$test - ENV override";
         }
     };
 }
@@ -130,11 +165,23 @@ my @ARGS = ($SEGMENT, 'message', qw(item1 item2));
     subtest "$APP - ERROR" => sub {
         for my $test (keys %TEST) {
             dies_ok {
-                $TEST{$test}->ERROR(@ARGS)
+                $LOGGER->ERROR($TEST{$test}, @ARGS)
             } "$test died";
 
-            my $message = 'Error: '.$TEST{$test}->make_message(@ARGS);
+            my $message = 'Error: '.$LOGGER->make_message($TEST{$test}, @ARGS);
             like($@, qr/^\Q$message\E/, "$test message");
+        }
+
+        local %ENV;
+        $ENV{PIPER_VERBOSE} = 2;
+        $ENV{PIPER_DEBUG} = 2;
+
+        for my $test (keys %TEST) {
+            dies_ok {
+                $LOGGER->ERROR($TEST{$test}, @ARGS)
+            } "$test (ENV override) died";
+ 
+            like($@, qr/^Error: \Q$OVERRIDE_EXP\E/, "$test (ENV override) message");
         }
     };
 }
@@ -161,5 +208,15 @@ BEGIN {
     has id => (
         is => 'ro',
         default => 'id',
+    );
+
+    has verbose => (
+        is => 'ro',
+        default => 0,
+    );
+
+    has debug => (
+        is => 'ro',
+        default => 0,
     );
 }
