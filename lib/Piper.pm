@@ -9,12 +9,13 @@ use v5.10;
 use strict;
 use warnings;
 
+use Carp;
 use Piper::Instance;
 use Piper::Process;
 use Types::Standard qw(ArrayRef ConsumerOf Tuple slurpy);
 
 use Moo;
-use namespace::autoclean;
+use namespace::clean;
 
 with qw(Piper::Role::Segment);
 
@@ -36,45 +37,69 @@ sub import {
 around BUILDARGS => sub {
     my ($orig, $self, @args) = @_;
 
-    my %opts;
-    my %hash;
-    while (my $thing = shift @args) {
-        my $label;
-        if (!ref $thing) {
-            $label = $thing;
-            $thing = shift @args;
+    my $opts;
+    my @children;
+    my $label;
+    for my $i (keys @args) {
+        # Label
+        if (!ref $args[$i]) {
+            croak 'ERROR: Label ('.($label // $args[$i]).') missing a segment'
+                if defined $label or !exists $args[$i+1];
+            $label = $args[$i];
+            next;
         }
 
+        # Options hash
+        if (!defined $opts and ref $args[$i] eq 'HASH'
+                # Options should not be labeled
+                and !defined $label
+                # Options shouldn't have a handler
+                and !exists $args[$i]->{handler}
+        ) {
+            $opts = $args[$i];
+            next;
+        }
+
+        # Segment
+        my $thing = $args[$i];
         if (eval { $thing->isa('Piper') }
                 or eval { $thing->isa('Piper::Process') }
         ) {
             $thing->_set_label($label) if $label;
-            push @{$hash{children}}, $thing;
+            push @children, $thing;
         }
         elsif (eval { $thing->isa('Piper::Instance') }) {
             $thing = $thing->segment;
             $thing->_set_label($label) if $label;
-            push @{$hash{children}}, $thing;
+            push @children, $thing;
         }
         elsif ((ref $thing eq 'CODE') or (ref $thing eq 'HASH')) {
+            croak 'ERROR: Segment is missing a handler [ '
+                    . ($label ? "label => $label" : "position => $i") . ' ]'
+                if ref $thing eq 'HASH' and !exists $thing->{handler};
+
             $thing = Piper::Process->new(
                 ($label ? $label : ()),
                 $thing
             );
-            push @{$hash{children}}, $thing;
+            push @children, $thing;
+        }
+        else {
+            croak 'ERROR: Cannot coerce type ('.(ref $thing).') into a segment [ '
+                . ($label ? "label => $label" : "position => $i") . ' ]';
         }
 
-        if (@args == 1
-                and ref $args[-1] eq 'HASH'
-                and !exists $args[-1]->{handler}
-        ) {
-            %opts = %{shift @args};
-        }
+        undef $label;
     }
 
-    $opts{config} = $CONFIG if defined $CONFIG;
+    croak 'ERROR: No segments provided to constructor' unless @children;
 
-    return $self->$orig(%opts, %hash);
+    $opts->{config} = $CONFIG if defined $CONFIG;
+
+    return $self->$orig(
+        %$opts,
+        children => \@children,
+    );
 };
 
 sub BUILD {

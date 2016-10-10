@@ -8,6 +8,7 @@ use v5.10;
 use strict;
 use warnings;
 
+use List::AllUtils qw(shuffle);
 use Test::Most;
 
 my $APP = "Piper";
@@ -24,50 +25,129 @@ my $SUCCESSFUL_NEW;
 {
     subtest "$APP - new" => sub {
         my %BADARGS = (
-            'only a label' => [qw(garbage)],
-            'only scalars' => [garbage => 'not a process'],
-            'arrayref' => [ [qw(garbage)] ],
-            'missing required' => [ garbage => {} ],
-            'no children' => [],
+            '^ERROR: Label \(garbage\) missing a segment' => {
+                'only a label' => [qw(garbage)],
+                'only scalars' => [garbage => 'not a process'],
+                'dangling label' => [label => sub {}, 'garbage'],
+            },
+            '^ERROR: Segment is missing a handler' => {
+                'missing required' => [ garbage => {} ],
+                'labeled options' => [garbage => { verbose => 1 }],
+                'two options hashes' => [ {verbose => 1}, {debug => 1} ],
+                'opts between label/handler' => [garbage => { verbose => 1 }, sub {}],
+            },
+            '^ERROR: No segments provided to constructor' => {
+                'no children' => [],
+                'only options' => [ {verbose => 1} ],
+            },
+            '^ERROR: Cannot coerce type \(.*?\) into a segment' => {
+                'arrayref' => [ [qw(garbage)] ],
+                'labeled arrayref' => [garbage => []],
+            },
         );
 
-        for my $bad (keys %BADARGS) {
-            throws_ok {
-                Piper->new(@{$BADARGS{$bad}})
-            } qr/^Missing required argument/, "Bad args: $bad";
+        for my $type (keys %BADARGS) {
+            my $regex = qr/$type/;
+            for my $bad (keys %{$BADARGS{$type}}) {
+                throws_ok {
+                    Piper->new(@{$BADARGS{$type}{$bad}})
+                } $regex, "Bad args: $bad";
+            }
         }
 
         my %GOODARGS = (
-            'hashref' => [{ handler => sub{}, }],
-            'coderef' => [ sub{}, ],
-            'Piper::Process' => [ Piper::Process->new(sub{}) ],
-            'Piper' => [ Piper->new(sub{}) ],
-            'Piper::Instance::Process' => [ Piper::Process->new(sub{})->init ],
-            'Piper::Instance' => [ Piper->new(sub{})->init ],
+            'hashref' => { handler => sub{}, },
+            'coderef' => sub{},
+            'Piper::Process' => Piper::Process->new(sub{}),
+            'Piper' => Piper->new(sub{}),
+            'Piper::Instance (process)' => Piper::Process->new(sub{})->init,
+            'Piper::Instance (pipe)' => Piper->new(sub{})->init,
         );
         $SUCCESSFUL_NEW += 2;
 
         for my $good (keys %GOODARGS) {
             warning_is {
-                Piper->new(@{$GOODARGS{$good}})
+                Piper->new($GOODARGS{$good})
             } undef, "Good args: $good";
             $SUCCESSFUL_NEW++;
 
             warning_is {
-                Piper->new('label', @{$GOODARGS{$good}})
+                Piper->new($good, $GOODARGS{$good})
             } undef, "Good args: label => $good";
             $SUCCESSFUL_NEW++;
-
-            warning_is {
-                Piper->new(@{$GOODARGS{$good}}, { verbose => 1 })
-            } undef, "Good args: $good, \$opts";
-            $SUCCESSFUL_NEW++;
-
-            warning_is {
-                Piper->new('label', @{$GOODARGS{$good}}, { verbose => 1 })
-            } undef, "Good args: label => $good, \$opts";
-            $SUCCESSFUL_NEW++;
         }
+
+        warning_is {
+            Piper->new(values %GOODARGS)
+        } undef, 'Good args: <all segment types>';
+        $SUCCESSFUL_NEW++;
+
+        warning_is {
+            Piper->new(%GOODARGS)
+        } undef, 'Good args: <label => all segment types>';
+        $SUCCESSFUL_NEW++;
+
+        warning_is {
+            Piper->new(values %GOODARGS, { verbose => 1 })
+        } undef, 'Good args: <all segment types>, $opts at end';
+        $SUCCESSFUL_NEW++;
+
+        warning_is {
+            Piper->new({ verbose => 1 }, values %GOODARGS)
+        } undef, 'Good args: <all segment types>, $opts at beginning';
+        $SUCCESSFUL_NEW++;
+
+        warning_is {
+            my @elems = values %GOODARGS;
+            splice @elems, 3, 0, { verbose => 1 };
+            Piper->new(@elems)
+        } undef, 'Good args: <all segment types, $opts in middle';
+        $SUCCESSFUL_NEW++;
+
+        warning_is {
+            Piper->new(%GOODARGS, { verbose => 1 })
+        } undef, 'Good args: <label => all segment types>, $opts at end';
+        $SUCCESSFUL_NEW++;
+
+        warning_is {
+            Piper->new({ verbose => 1 }, %GOODARGS)
+        } undef, 'Good args: <label => all segment types>, $opts at beginning';
+        $SUCCESSFUL_NEW++;
+
+        warning_is {
+            my @elems = %GOODARGS;
+            splice @elems, 6, 0, { verbose => 1 };
+            Piper->new(@elems)
+        } undef, 'Good args: <label => all segment types, $opts in middle';
+        $SUCCESSFUL_NEW++;
+
+        my $where = 0;
+        my @elems = map {
+            $where++;
+            $where > 3 ? [ $_ => $GOODARGS{$_} ] : [ $GOODARGS{$_} ]
+        } keys %GOODARGS;
+        @elems = shuffle @elems;
+
+        warning_is {
+            Piper->new(map { @{$_} } @elems);
+        } undef, 'Good args: half labeled, random order';
+        $SUCCESSFUL_NEW++;
+
+        warning_is {
+            Piper->new((map { @{$_} } @elems), { verbose => 1 });
+        } undef, 'Good args: half labeled, random order, $opts at end';
+        $SUCCESSFUL_NEW++;
+
+        warning_is {
+            Piper->new({ verbose => 1 }, map { @{$_} } @elems);
+        } undef, 'Good args: half labeled, random order, $opts at beginning';
+        $SUCCESSFUL_NEW++;
+
+        splice @elems, 3, 0, [ { verbose => 1 } ];
+        warning_is {
+            Piper->new(map { @{$_} } @elems);
+        } undef, 'Good args: half labeled, random order, $opts in middle';
+        $SUCCESSFUL_NEW++;
     };
 }
 
