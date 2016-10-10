@@ -24,15 +24,15 @@ my $SUCCESSFUL_NEW;
     subtest "$APP - new" => sub {
         throws_ok {
             Piper::Process->new(qw(1 2 3))
-        } qr/^Too many arguments/, 'too many arguments';
+        } qr/^ERROR: Too many arguments/, 'too many arguments';
 
         throws_ok {
             Piper::Process->new(qw(1 2))
-        } qr/^Last argument must be a CODE ref or HASH ref/, 'last arg CODE or HASH';
+        } qr/^ERROR: Last argument must be a CODE ref or HASH ref/, 'last arg CODE or HASH';
 
         throws_ok {
             Piper::Process->new([qw(blah)], {})
-        } qr/^Labels may not be a reference/, 'bad label';
+        } qr/^ERROR: Labels may not be a reference/, 'bad label';
 
         my $EXP = Piper::Process->new({
             label => 'process',

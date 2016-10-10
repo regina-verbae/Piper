@@ -9,6 +9,7 @@ use v5.10;
 use strict;
 use warnings;
 
+use Carp;
 use Piper::Instance;
 use Types::Standard qw(CodeRef);
 
@@ -65,10 +66,10 @@ The constructor accepts the following patterns for @args:
 around BUILDARGS => sub {
     my ($orig, $self, @args) = @_;
 
-    die "Too many arguments to constructor of ".__PACKAGE__
+    croak "ERROR: Too many arguments to constructor of ".__PACKAGE__
         if @args > 2;
 
-    die "Last argument must be a CODE ref or HASH ref"
+    croak "ERROR: Last argument must be a CODE ref or HASH ref"
         unless (ref $args[-1] eq 'CODE') or (ref $args[-1] eq 'HASH');
 
     my %hash;
@@ -80,7 +81,7 @@ around BUILDARGS => sub {
     }
 
     if (@args) {
-        die "Labels may not be a reference" if ref $args[0];
+        croak "ERROR: Labels may not be a reference" if ref $args[0];
         $hash{label} = shift @args;
     }
 

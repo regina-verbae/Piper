@@ -9,7 +9,7 @@ use v5.10;
 use strict;
 use warnings;
 
-use Carp qw();
+use Carp;
 use Types::Common::Numeric qw(PositiveOrZeroNum);
 
 use Moo::Role;
@@ -42,16 +42,16 @@ around DEBUG => sub {
 
 =head2 ERROR
 
-The method should cause a die.  It will do so
-automatically if not done explicitly, though with
-an extremely generic and unhelpful message.
+The method should cause a die or croak.  It will
+do so automatically if not done explicitly, though
+with an extremely generic and unhelpful message.
 
 =cut
 
 requires 'ERROR';
 
 after ERROR => sub {
-    die "ERROR encountered";
+    croak "ERROR encountered";
 };
 
 =head2 INFO

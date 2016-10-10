@@ -9,6 +9,7 @@ use v5.10;
 use strict;
 use warnings;
 
+use Carp;
 use Types::Common::Numeric qw(PositiveInt);
 use Types::Standard qw(ClassName);
 
@@ -71,7 +72,7 @@ has logger_class => (
         eval "require $value";
         ClassName->assert_valid($value);
         unless ($value->does('Piper::Role::Logger')) {
-            die "logger_class '$value' does not consume role 'Piper::Role::Logger'\n";
+            croak "ERROR: logger_class '$value' does not consume role 'Piper::Role::Logger'\n";
         }
         return 1;
     },
@@ -97,7 +98,7 @@ has queue_class => (
         eval "require $value";
         ClassName->assert_valid($value);
         unless ($value->does('Piper::Role::Queue')) {
-            die "queue_class '$value' does not consume role 'Piper::Role::Queue'\n";
+            croak "ERROR: queue_class '$value' does not consume role 'Piper::Role::Queue'\n";
         }
         return 1;
     },
