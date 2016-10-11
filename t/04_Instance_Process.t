@@ -66,10 +66,10 @@ my $TEST = Piper::Process->new(half => {
     };
 }
 
-# Test get_batch_size
+# Test batch_size
 {
-    subtest "$APP - get_batch_size" => sub {
-        is($TEST->get_batch_size, 2, 'ok');
+    subtest "$APP - batch_size" => sub {
+        is($TEST->batch_size, 2, 'ok');
     };
 }
 
@@ -171,7 +171,7 @@ my $TEST = Piper::Process->new(half => {
 {
     subtest "$APP - disabling" => sub {
         $TEST->enabled(0);
-        is($TEST->is_enabled, 0, 'disabled');
+        is($TEST->enabled, 0, 'disabled');
 
         $TEST->enqueue(1..3);
         is($TEST->pending, 0, 'nothing pending in disabled process');

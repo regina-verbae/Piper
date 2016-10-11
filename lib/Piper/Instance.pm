@@ -41,7 +41,7 @@ sub process_batch {
         $best->process_batch;
     }
     else {
-        my $num = $self->get_batch_size;
+        my $num = $self->batch_size;
         $self->DEBUG("Processing batch with max size", $num);
 
         my @batch = $self->queue->dequeue($num);
@@ -75,6 +75,25 @@ has args => (
         }
     },
 );
+
+=head2 batch_size
+
+=cut
+
+around batch_size => sub {
+    my ($orig, $self) = splice @_, 0, 2;
+    if (@_) {
+        return $self->clear_batch_size if !defined $_[0];
+        return $self->$orig(@_);
+    }
+    else {
+        return $self->has_batch_size
+            ? $self->$orig()
+            : $self->has_parent
+                ? $self->parent->batch_size
+                : $self->main->config->batch_size;
+    }
+};
 
 =head2 children
 
@@ -153,6 +172,25 @@ has drain => (
     },
 );
 }
+
+=head2 enabled
+
+=cut
+
+around enabled => sub {
+    my ($orig, $self) = splice @_, 0, 2;
+    if (@_) {
+        return $self->clear_enabled if !defined $_[0];
+        return $self->$orig(@_);
+    }
+    else {
+        return $self->has_enabled
+            ? $self->$orig()
+            : $self->has_parent
+                ? $self->parent->enabled
+                : 1;
+    }
+};
 
 =head2 follower
 
@@ -283,7 +321,7 @@ has queue => (
 around enqueue => sub {
     my ($orig, $self, @args) = @_;
 
-    if (!$self->is_enabled) {
+    if (!$self->enabled) {
         # Bypass - go straight to drain
         $self->INFO("Skipping disabled process", @args);
         $self->drain->enqueue(@args);
@@ -473,20 +511,6 @@ sub find_segment {
     return $cache->{$location};
 }
 
-=head2 get_batch_size
-
-=cut
-
-sub get_batch_size {
-    my ($self) = @_;
-    my $size = $self->has_batch_size
-        ? $self->batch_size
-        : $self->has_parent
-            ? $self->parent->get_batch_size
-            : $self->main->config->batch_size;
-    return $size;
-}
-
 =head2 inject(@items)
 
 =cut
@@ -523,23 +547,6 @@ sub injectAt {
         if !defined $segment;
     $self->INFO("Injecting to $location", @_);
     $segment->enqueue(@_);
-}
-
-=head2 is_enabled
-
-=cut
-
-sub is_enabled {
-    my ($self) = @_;
-
-    return 0 if !$self->enabled;
-    # Check all the parents...
-    my $par = $self;
-    while ($par->has_parent) {
-        $par = $par->parent;
-        return 0 if !$par->enabled;
-    }
-    return 1;
 }
 
 =head2 is_exhausted
@@ -591,7 +598,7 @@ sub pressure {
         return max(map { $_->pressure } @{$self->children});
     }
     else {
-        return $self->pending ? int(100 * $self->pending / $self->get_batch_size) : 0;
+        return $self->pending ? int(100 * $self->pending / $self->batch_size) : 0;
     }
 }
 

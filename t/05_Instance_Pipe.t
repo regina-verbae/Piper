@@ -269,10 +269,10 @@ use Piper;
             };
         }
 
-        # Test get_batch_size
-        subtest "$APP - get_batch_size" => sub {
-            is($SMALL->get_batch_size, 4, 'pipe ok');
-            is($CHILD->get_batch_size, 2, 'child overrides pipe');
+        # Test batch_size
+        subtest "$APP - batch_size" => sub {
+            is($SMALL->batch_size, 4, 'pipe ok');
+            is($CHILD->batch_size, 2, 'child overrides pipe');
         };
 
         # Test queueing
@@ -362,8 +362,8 @@ use Piper;
         # Test disabling
         subtest "$APP - disabling" => sub {
             $SMALL->enabled(0);
-            is($SMALL->is_enabled, 0, 'disabled pipe');
-            is($CHILD->is_enabled, 0, 'child inherits disable from parent');
+            is($SMALL->enabled, 0, 'disabled pipe');
+            is($CHILD->enabled, 0, 'child inherits disable from parent');
 
             $SMALL->enqueue(1..3);
             is($SMALL->pending, 0, 'nothing pending in disabled pipe');
@@ -377,8 +377,8 @@ use Piper;
 
             $SMALL->enabled(1);
             $CHILD->enabled(0);
-            is($SMALL->is_enabled, 1, 'parent does not inherit disable from child');
-            is($CHILD->is_enabled, 0, 'child disabled');
+            is($SMALL->enabled, 1, 'parent does not inherit disable from child');
+            is($CHILD->enabled, 0, 'child disabled');
 
             $SMALL->enqueue(1..3);
             is($SMALL->pending, 0, 'nothing pending in pipe with 1 non-enabled child');
@@ -635,11 +635,11 @@ subtest "$APP - nested pipes" => sub {
         };
     }
 
-    # Test get_batch_size
-    subtest "$APP - get_batch_size" => sub {
-        is($TEST->get_batch_size, 2, 'main ok');
-        is($CHILD->get_batch_size, 2, 'child inherited ok');
-        is($GRAND2->get_batch_size,
+    # Test batch_size
+    subtest "$APP - batch_size" => sub {
+        is($TEST->batch_size, 2, 'main ok');
+        is($CHILD->batch_size, 2, 'child inherited ok');
+        is($GRAND2->batch_size,
             4, 'child override ok'
         );
     };
@@ -740,9 +740,9 @@ subtest "$APP - nested pipes" => sub {
     # Test disabling
     subtest "$APP - disabling" => sub {
         $TEST->enabled(0);
-        ok(!$TEST->is_enabled, 'disabled pipe');
-        ok(!$CHILD->is_enabled, 'child inherits disable from parent');
-        ok(!$GRAND2->is_enabled, 'grandchild inherits disable from grandparent');
+        ok(!$TEST->enabled, 'disabled pipe');
+        ok(!$CHILD->enabled, 'child inherits disable from parent');
+        ok(!$GRAND2->enabled, 'grandchild inherits disable from grandparent');
 
         $TEST->enqueue(1..3);
         ok(!$TEST->pending, 'nothing pending in disabled pipe');
@@ -756,8 +756,8 @@ subtest "$APP - nested pipes" => sub {
 
         $TEST->enabled(1);
         $CHILD->enabled(0);
-        ok($TEST->is_enabled, 'parent does not inherit disable from child');
-        ok(!$GRAND1->is_enabled, 'grandchild inherits disable from child');
+        ok($TEST->enabled, 'parent does not inherit disable from child');
+        ok(!$GRAND1->enabled, 'grandchild inherits disable from child');
 
         $TEST->enqueue(1..3);
         ok(!$TEST->pending, 'nothing pending in pipe with 1 non-enabled child');
@@ -769,9 +769,9 @@ subtest "$APP - nested pipes" => sub {
 
         $CHILD->enabled(1);
         $GRAND2->enabled(0);
-        ok($TEST->is_enabled, 'parent does not inherit disable from grandchild');
-        ok($CHILD->is_enabled, 'child does not inherit disable from grandchild');
-        ok($GRAND1->is_enabled, 'sibling does not inherit disable');
+        ok($TEST->enabled, 'parent does not inherit disable from grandchild');
+        ok($CHILD->enabled, 'child does not inherit disable from grandchild');
+        ok($GRAND1->enabled, 'sibling does not inherit disable');
 
         $TEST->enqueue(1..2);
         ok($TEST->pending, 'pending with one enabled grandchild');

@@ -106,9 +106,11 @@ of its parent(s) if not provided.
 =cut
 
 has batch_size => (
-    is => 'ro',
+    is => 'rw',
     isa => PositiveInt,
+    required => 0,
     predicate => 1,
+    clearer => 1,
 );
 
 =head2 config
@@ -147,7 +149,9 @@ can accept items for processing.  Defaults to true.
 has enabled => (
     is => 'rw',
     isa => Bool,
-    default => 1,
+    required => 0,
+    predicate => 1,
+    clearer => 1,
 );
 
 =head2 id
@@ -206,9 +210,17 @@ has verbose => (
 
 =head1 METHODS
 
+=head2 clear_batch_size
+
+Clears any assigned batch_size for the segment.
+
 =head2 clear_debug
 
 Clears any assigned debug level for the segment.
+
+=head2 clear_enabled
+
+Clears any assigned enabled setting for the segment.
 
 =head2 clear_verbose
 
@@ -227,6 +239,10 @@ has an assigned batch_size.
 =head2 has_debug
 
 A boolean indicating whether the segment has an assigned debug level.
+
+=head2 has_enabled
+
+A boolean indicating whether the segment has an assigned enabled setting.
 
 =head2 has_verbose
 

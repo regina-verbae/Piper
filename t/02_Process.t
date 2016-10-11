@@ -112,7 +112,7 @@ for my $test (
 
         # Test enabled
         subtest "$NAME - enabled" => sub {
-            is($TEST->enabled, 1, 'default');
+            ok(!$TEST->has_enabled, 'predicate');
 
             $TEST->enabled(0);
             is($TEST->enabled, 0, 'writable');
@@ -121,7 +121,7 @@ for my $test (
                 $TEST->enabled(-1)
             } qr/did not pass type constraint "Bool"/, 'must be type Bool';
 
-            $TEST->enabled(1);
+            $TEST->clear_enabled;
         };
 
         # Test batch_size
