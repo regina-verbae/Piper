@@ -25,36 +25,6 @@ use overload (
     fallback => 1,
 );
 
-sub process_batch {
-    my ($self) = @_;
-    if ($self->has_children) {
-        my $best;
-        # Full-batch process closest to drain
-        if ($best = last_value { $_->pressure >= 100 } @{$self->children}) {
-            $self->DEBUG("Chose batch $best: full-batch process closest to drain");
-        }
-        # If no full batch, choose the one closest to full
-        else {
-            $best = max_by { $_->pressure } @{$self->children};
-            $self->DEBUG("Chose batch $best: closest to full-batch");
-        }
-        $best->process_batch;
-    }
-    else {
-        my $num = $self->batch_size;
-        $self->DEBUG("Processing batch with max size", $num);
-
-        my @batch = $self->queue->dequeue($num);
-        $self->INFO("Processing batch", @batch);
-
-        $self->segment->handler->(
-            $self,
-            \@batch,
-            @{$self->args}
-        );
-    }
-}
-
 =head1 ATTRIBUTES
 
 =head2 args
@@ -355,7 +325,7 @@ around enqueue => sub {
 
 =cut
 
-BEGIN { # So we can 'around' on debug/verbose
+BEGIN { # So we can 'around' on Piper::Role::Segment methods
 has segment => (
     is => 'ro',
     isa => ConsumerOf['Piper::Role::Segment'],
@@ -392,69 +362,6 @@ around verbose => sub {
 };
 
 =head1 METHODS
-
-=head2 descendant($path, $referrer)
-
-=cut
-
-sub descendant {
-    my ($self, $path, $referrer) = @_;
-    return unless $self->has_children;
-    $referrer //= '';
-
-    $self->DEBUG("Searching for location '$path'");
-    $self->DEBUG("Referrer", $referrer) if $referrer;
-
-    # Search immediate children
-    $path = Piper::Path->new($path) if $path and not ref $path;
-    my @pieces = $path ? $path->split : ();
-    my $descend = $self;
-    while (defined $descend and @pieces) {
-        if (!$descend->has_children) {
-            $descend = undef;
-        }
-        elsif (exists $descend->directory->{$pieces[0]}) {
-            $descend = $descend->directory->{$pieces[0]};
-            shift @pieces;
-        }
-        else {
-            $descend = undef;
-        }
-    }
-
-    # Search grandchildren,
-    #   but not when checking whether requested location starts at $self (referrer = $self)
-    if (!defined $descend and $referrer ne $self) {
-        my @possible;
-        for my $child (@{$self->children}) {
-            if ($child eq $referrer) {
-                $self->DEBUG("Skipping search of '$child' referrer");
-                next;
-            }
-            if ($child->has_children) {
-                my $potential = $child->descendant($path);
-                push @possible, $potential if defined $potential;
-            }
-        }
-
-        if (@possible) {
-            $descend = min_by { $_->path->split } @possible;
-        }
-    }
-
-    # If location begins with $self->label, see if requested location starts at $self
-    #   but not if already checking that (referrer = $self)
-    if (!defined $descend and $referrer ne $self) {
-        my $overlap = $self->label;
-        if ($path =~ m{^\Q$overlap\E(?:$|/(?<path>.*))}) {
-            $path = $+{path} // '';
-            $self->DEBUG("Overlapping descendant search", $path ? $path : ());
-            $descend = $path ? $self->descendant($path, $self) : $self;
-        }
-    }
-
-    return $descend;
-}
 
 =head2 eject(@items)
 
@@ -587,6 +494,81 @@ sub pending {
     }
 }
 
+=head2 recycle(@items)
+
+=cut
+
+sub recycle {
+    my $self = shift;
+    $self->INFO("Recycling", @_);
+    $self->enqueue(@_);
+}
+
+=head1 PRIVATE METHODS
+
+=head2 descendant($path, $referrer)
+
+=cut
+
+sub descendant {
+    my ($self, $path, $referrer) = @_;
+    return unless $self->has_children;
+    $referrer //= '';
+
+    $self->DEBUG("Searching for location '$path'");
+    $self->DEBUG("Referrer", $referrer) if $referrer;
+
+    # Search immediate children
+    $path = Piper::Path->new($path) if $path and not ref $path;
+    my @pieces = $path ? $path->split : ();
+    my $descend = $self;
+    while (defined $descend and @pieces) {
+        if (!$descend->has_children) {
+            $descend = undef;
+        }
+        elsif (exists $descend->directory->{$pieces[0]}) {
+            $descend = $descend->directory->{$pieces[0]};
+            shift @pieces;
+        }
+        else {
+            $descend = undef;
+        }
+    }
+
+    # Search grandchildren,
+    #   but not when checking whether requested location starts at $self (referrer = $self)
+    if (!defined $descend and $referrer ne $self) {
+        my @possible;
+        for my $child (@{$self->children}) {
+            if ($child eq $referrer) {
+                $self->DEBUG("Skipping search of '$child' referrer");
+                next;
+            }
+            if ($child->has_children) {
+                my $potential = $child->descendant($path);
+                push @possible, $potential if defined $potential;
+            }
+        }
+
+        if (@possible) {
+            $descend = min_by { $_->path->split } @possible;
+        }
+    }
+
+    # If location begins with $self->label, see if requested location starts at $self
+    #   but not if already checking that (referrer = $self)
+    if (!defined $descend and $referrer ne $self) {
+        my $overlap = $self->label;
+        if ($path =~ m{^\Q$overlap\E(?:$|/(?<path>.*))}) {
+            $path = $+{path} // '';
+            $self->DEBUG("Overlapping descendant search", $path ? $path : ());
+            $descend = $path ? $self->descendant($path, $self) : $self;
+        }
+    }
+
+    return $descend;
+}
+
 =head2 pressure
 
 =cut
@@ -602,14 +584,38 @@ sub pressure {
     }
 }
 
-=head2 recycle(@items)
+=head2 process_batch
 
 =cut
 
-sub recycle {
-    my $self = shift;
-    $self->INFO("Recycling", @_);
-    $self->enqueue(@_);
+sub process_batch {
+    my ($self) = @_;
+    if ($self->has_children) {
+        my $best;
+        # Full-batch process closest to drain
+        if ($best = last_value { $_->pressure >= 100 } @{$self->children}) {
+            $self->DEBUG("Chose batch $best: full-batch process closest to drain");
+        }
+        # If no full batch, choose the one closest to full
+        else {
+            $best = max_by { $_->pressure } @{$self->children};
+            $self->DEBUG("Chose batch $best: closest to full-batch");
+        }
+        $best->process_batch;
+    }
+    else {
+        my $num = $self->batch_size;
+        $self->DEBUG("Processing batch with max size", $num);
+
+        my @batch = $self->queue->dequeue($num);
+        $self->INFO("Processing batch", @batch);
+
+        $self->segment->handler->(
+            $self,
+            \@batch,
+            @{$self->args}
+        );
+    }
 }
 
 1;
