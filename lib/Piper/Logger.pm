@@ -10,6 +10,7 @@ use strict;
 use warnings;
 
 use Carp qw();
+# use Data::Dump qw(dump); # required if needed
 
 use Moo;
 
@@ -121,7 +122,8 @@ sub make_message {
         . $message;
 
     if ($self->verbose_level($segment) > 1 and @items) {
-        $message .= ' <'.join(',', @items).'>';
+        require Data::Dump;
+        $message .= ' ' . Data::Dump::dump(@items);
     }
 
     return $message;

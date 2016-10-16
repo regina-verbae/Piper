@@ -31,7 +31,7 @@ my %TEST = (
     'verbose = 2; debug = 1' => Test::Segment->new(verbose => 2, debug => 1),
     'verbose = 2; debug = 2' => Test::Segment->new(verbose => 2, debug => 2),
 );
-my @ARGS = ('message', qw(item1 item2));
+my @ARGS = ('message', 'item1', { item2 => 'thing'});
 my $OVERRIDE_EXP = $LOGGER->make_message($TEST{'verbose = 2; debug = 2'}, @ARGS);
 
 # Test debug/verbose_level
@@ -55,12 +55,12 @@ my $OVERRIDE_EXP = $LOGGER->make_message($TEST{'verbose = 2; debug = 2'}, @ARGS)
         my %EXP = (
             default => 'label: message',
             'verbose = 1' => 'path: message',
-            'verbose = 2' => 'path: message <item1,item2>',
+            'verbose = 2' => 'path: message ("item1", { item2 => "thing" })',
             'debug = 1' => 'label: message',
             'debug = 2' => 'label (id): message',
             'verbose = 1; debug = 1' => 'path: message',
-            'verbose = 2; debug = 1' => 'path: message <item1,item2>',
-            'verbose = 2; debug = 2' => 'path (id): message <item1,item2>',
+            'verbose = 2; debug = 1' => 'path: message ("item1", { item2 => "thing" })',
+            'verbose = 2; debug = 2' => 'path (id): message ("item1", { item2 => "thing" })',
         );
 
         for my $test (keys %TEST) {
