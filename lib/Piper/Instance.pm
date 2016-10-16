@@ -108,7 +108,7 @@ has drain => (
     builder => sub {
         my ($self) = @_;
         if ($self->has_parent) {
-            return $self->parent->follower->{$self};
+            return $self->next_segment;
         }
         else {
             return $self->main->config->queue_class->new();
@@ -455,6 +455,18 @@ sub is_exhausted {
 sub isnt_exhausted {
     my ($self) = @_;
     return !$self->is_exhausted;
+}
+
+=head2 next_segment
+
+Returns the next adjacent segment for $self.  Returns undef if $self is the outermost segment.
+
+=cut
+
+sub next_segment {
+    my ($self) = @_;
+    return unless $self->has_parent;
+    return $self->parent->follower->{$self};
 }
 
 =head2 pending
