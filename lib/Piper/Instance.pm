@@ -50,20 +50,7 @@ has args => (
 
 =cut
 
-around batch_size => sub {
-    my ($orig, $self) = splice @_, 0, 2;
-    if (@_) {
-        return $self->clear_batch_size if !defined $_[0];
-        return $self->$orig(@_);
-    }
-    else {
-        return $self->has_batch_size
-            ? $self->$orig()
-            : $self->has_parent
-                ? $self->parent->batch_size
-                : $self->main->config->batch_size;
-    }
-};
+# Decorated below
 
 =head2 children
 
@@ -90,20 +77,7 @@ To clear a previously-set debug level for a segment, simply set it to <undef>:
 
 =cut
 
-around debug => sub {
-    my ($orig, $self) = splice @_, 0, 2;
-    if (@_) {
-        return $self->clear_debug if !defined $_[0];
-        return $self->$orig(@_);
-    }
-    else {
-        return $self->has_debug
-            ? $self->$orig()
-            : $self->has_parent
-                ? $self->parent->debug
-                : 0;
-    }
-};
+# Decorated below
 
 =head2 directory
 
@@ -147,20 +121,7 @@ has drain => (
 
 =cut
 
-around enabled => sub {
-    my ($orig, $self) = splice @_, 0, 2;
-    if (@_) {
-        return $self->clear_enabled if !defined $_[0];
-        return $self->$orig(@_);
-    }
-    else {
-        return $self->has_enabled
-            ? $self->$orig()
-            : $self->has_parent
-                ? $self->parent->enabled
-                : 1;
-    }
-};
+# Decorated below
 
 =head2 follower
 
@@ -346,20 +307,36 @@ To clear a previously-set verbosity level for a segment, simply set it to
 
 =cut
 
-around verbose => sub {
-    my ($orig, $self) = splice @_, 0, 2;
-    if (@_) {
-        return $self->clear_verbose if !defined $_[0];
-        return $self->$orig(@_);
-    }
-    else {
-        return $self->has_verbose
-            ? $self->$orig()
-            : $self->has_parent
-                ? $self->parent->verbose
-                : 0;
-    }
-};
+# Decorated below
+
+# Inherit parent settings
+for my $attr (qw(batch_size debug enabled verbose)) {
+    my $clear = "clear_$attr";
+    my $has = "has_$attr";
+
+    around $attr => sub {
+        my ($orig, $self) = splice @_, 0, 2;
+
+        state $default = {
+            batch_size => $self->main->config->batch_size,
+            debug => 0,
+            enabled => 1,
+            verbose => 0,
+        };
+
+        if (@_) {
+            return $self->$clear() if !defined $_[0];
+            return $self->$orig(@_);
+        }
+        else {
+            return $self->$has()
+                ? $self->$orig()
+                : $self->has_parent
+                    ? $self->parent->$attr()
+                    : $default->{$attr};
+        }
+    };
+}
 
 =head1 METHODS
 
