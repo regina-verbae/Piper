@@ -127,7 +127,6 @@ has drain => (
 
 =cut
 
-#TODO: make this a method called by children
 has follower => (
     is => 'lazy',
     isa => HashRef,
@@ -440,12 +439,7 @@ sub injectAt {
 sub is_exhausted {
     my ($self) = @_;
     
-    # Attempt to get some data ready
-    while (!$self->ready and $self->pending) {
-        $self->process_batch;
-    }
-
-    return $self->ready ? 0 : 1;
+    return $self->prepare ? 0 : 1;
 }
 
 =head2 isnt_exhausted
@@ -486,6 +480,20 @@ sub pending {
 =head2 recycle(@items)
 
 =cut
+
+=head2 prepare([$num])
+
+=cut
+
+sub prepare {
+    my ($self, $num) = @_;
+    $num //= 1;
+
+    while ($self->pending and $self->ready < $num) {
+        $self->process_batch;
+    }
+    return $self->ready;
+}
 
 sub recycle {
     my $self = shift;
