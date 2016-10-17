@@ -36,6 +36,12 @@ sub import {
 
 =head1 SYNOPSIS
 
+    use Piper;
+
+    my $pipe = Piper->new(
+        
+    )->init();
+
 =head1 DESCRIPTION
 
 The software engineering concept known as a pipeline is a chain of processing segments, arranged such that the output of each segment is the input of the next.
@@ -54,7 +60,7 @@ Data is automatically processed in batches for each segment (with configurable b
 
 =item *
 
-Built-in support for non-linear and/or recursive pipelines.
+Built-in support exists for non-linear and/or recursive pipelines.
 
 =item *
 
@@ -68,42 +74,46 @@ Processing segments are pluggable and reusable.
 
 Create a container pipeline segment (parent) from the provided child C<@segments>.
 
-Additionally, a single hashref of options for the container/parent segment may
+Additionally, a single hashref of attributes for the container/parent segment may
 be included as an argument to the constructor (anywhere in the argument list).
-See the L</OPTIONS> section for a description of options available for both parent
+See the L</SEGMENT ATTRIBUTES> section for a description of attributes available for both parent
 and child segments.
 
 Accepted segment types are as follows:
 
-=head3 L<Piper> object
+=over
 
-Which creates a sub-container of pipeline segments.  There is no (explicit) limit to the
+=item L<Piper> object
+
+Creates a sub-container of pipeline segments.  There is no (explicit) limit to the
 number of nested containers a pipeline may contain.
 
-=head3 L<Piper::Process|/PROCESS HANDLER> object
+=item L<Piper::Process|/PROCESS HANDLER> object
 
 See the L</PROCESS HANDLER> section for a description of L<Piper::Process> objects.
 
-=head3 A coderef (which will be coerced into a L<Piper::Process> object).
+=item A coderef (which will be coerced into a L<Piper::Process> object).
 
-=head3 A hashref that can be coerced into a L<Piper::Process> object.
+=item A hashref that can be coerced into a L<Piper::Process> object.
 
 In order to be considered a candidate for coercion, the hashref must contain
 (at a minimum) the 'handler' key.
 
-=head3 L<Piper::Instance|/INITIALIZATION> object
+=item L<Piper::Instance|/INITIALIZATION> object
 
 In this case, the associated L<Piper> or L<Piper::Process> object is extracted from
 the L<Piper::Instance> object for use in the new pipeline segment.
 
 See L</INITIALIZATION> for a description of L<Piper::Instance> objects.
 
-=head3 A C<< ($label => $segment) >> pair
+=item A C<< $label => $segment >> pair
 
 For such pairs, the C<$segment> can be any of the above segment types, and C<$label>
 is a simple scalar which will be used as C<$segment>'s label.
 
 If the C<$segment> already has a label, C<$label> will override it.
+
+=back
 
 =head2 Constructor Example
 
@@ -133,6 +143,93 @@ If the C<$segment> already has a label, C<$label> will override it.
     );
 
 =head1 PROCESS HANDLER
+
+L<Piper::Process> objects have the same L</SEGMENT ATTRIBUTES> as L<Piper> objects, but have an additional required attribute known as its C<handler>.
+
+A process C<handler> is the data-processing subroutine for the segment.
+
+In its simplest form, the process handler takes input from the previous pipeline segment, processes it, and passes it on to the next segment; but handlers also have built-in support for non-linear and recursive dataflow (see L</FLOW CONTROL>).
+
+The arguments provided to the C<handler> subroutine are:
+
+=over
+
+=item C<$instance>
+
+The instance (a L<Piper::Instance> object) corresponding to the segment.
+
+=item C<$batch>
+
+An arrayref of data items to process.
+
+=item C<@args>
+
+Any arguments provided to the C<init> method during the L</INITIALIZATION> of the pipeline.
+
+=back
+
+After processing a batch of data, the C<handler> may pass the results to the next segment using the C<emit> method called from the handler's C<$instance>.
+
+=head2 Example:
+
+    sub {
+        my ($instance, $batch) = @_;
+        $instance->emit( map { ... } @$batch );
+    }
+
+=head1 FLOW CONTROL
+            
+Since L<Piper> has built-in support for non-linear and/or recursive pipelines, a L</PROCESS HANDLER> may send data to any other segment in the pipeline, including itself.
+
+The following methods may be called from the C<$instance> object passed as the first argument to a C<handler>:
+
+=head2 C<emit(@data)>
+
+Send C<@data> to the next segment in the pipeline.
+
+=head2 C<recycle(@data)>
+
+Re-queue C<@data> to the current segment.
+
+=head2 C<injectAt($location, @data)>
+
+=head2 C<injectAfter($location, @data)>
+
+Send C<@data> to the segment I<at> or I<after> the specified C<$location>.
+
+For each of the above methods, C<$location> must be the label of a segment in the pipeline or a path-like representation of an hierarchy of labels.
+
+For example, in the following pipeline, a few possible C<$location> values include C<'a'>, C<'subpipe/b'>, or C<'main/subpipe/c'>.
+
+    my $pipe = Piper->new(
+        { label => 'main' },
+        subpipe => Piper->new(
+            a => sub { ... },
+            b => sub { ... },
+            c => sub { ... },
+        ),
+    );
+
+If a label is unique within the pipeline, no path is required.  For non-unique labels, searches are performed in a nearest-neighbor, depth-first manner.
+
+For example, in the following pipeline, searching for C<processA> from the handler of C<processB> would find C<main/pipeA/processA>, not C<main/processA>.  So to reach C<main/processA> from C<processB>, the handler would need to search for C<main/processA>.
+
+    my $pipe = Piper->new(
+        { label => 'main' },
+        pipeA => Piper->new(
+            processA => sub { ... },
+            processB => sub { ... },
+        ),
+        processA => sub { ... },
+    );
+
+=head2 C<inject(@data)>
+
+Send C<@data> to the queue of the outermost segment.  Equivalent to C<injectAt('main', @data)> in the above example pipeline.
+
+=head2 C<eject(@data)>
+
+Send C<@data> to the drain of the outermost segment, making the C<@data> immediately ready for C<dequeue>.
 
 =head1 INITIALIZATION
 
@@ -178,25 +275,23 @@ Instances are ready to accept data for processing:
         my $result = $instance->dequeue;
     }
 
-=head1 FLOW CONTROL
-            
-=head1 OPTIONS
+=head1 SEGMENT ATTRIBUTES
 
-All of the following options are available for both container (L<Piper>) and processor (L<Piper::Process>) segment types.
+All of the following attributes are available for both container (L<Piper>) and processor (L<Piper::Process>) segment types.
 
-Each option is equipped with an accessor of the same name.
+Each attribute is equipped with an accessor of the same name.
 
-A star (*) indicates that the option is writable, and can be modified at runtime by passing a value as an argument to the method of the same name.
+A star (*) indicates that the attribute is writable, and can be modified at runtime by passing a value as an argument to the method of the same name.
 
-All options (except C<label>) have an associated predicate method called C<has_$option> which returns a boolean indicating whether the option has been set for the segment.
+All attributes (except C<label>) have an associated predicate method called C<has_$attribute> which returns a boolean indicating whether the attribute has been set for the segment.
 
-All writable options (indicated by *) can be cleared by passing an explicit C<undef> to the writer method or by calling the appropriate clearer method called C<clear_$option>.
+All writable attributes (indicated by *) can be cleared by passing an explicit C<undef> to the writer method or by calling the appropriate clearer method called C<clear_$attribute>.
 
-All accessors, writers, predicates, and clearers are still available for each segment before and after L</INITIALIZATION>.
+All accessors, writers, predicates, and clearers are available for each segment before and after L</INITIALIZATION>.
 
 =head2 allow
 
-A coderef which can be used to subset the items which are "allowed" to be
+A coderef which can be used to subset the items which are I<allowed> to be
 processed by the segment.
 
 The coderef executes on each item attempting to queue to the segment.  If it
@@ -238,7 +333,7 @@ levels.
 A boolean indicating that the segment is enabled and can accept items for
 processing.
 
-Once initialized (see L</INITIALIZATION>), a segment inherits this option from any
+Once initialized (see L</INITIALIZATION>), a segment inherits this attribute from any
 existing parent(s).  The default is true.
 
 If a segment is disabled (C<enabled = 0>), all items attempting to queue to the segment are
@@ -263,9 +358,77 @@ globally overridden by the environment variable C<PIPER_VERBOSE>.
 See the L</LOGGING AND DEBUGGING> section for specifics about debug and verbosity
 levels.
 
+=head2 INSTANCE ATTRIBUTES
+
+The following attributes have read-only accessors (of the same name).
+
+=head3 children
+
+For container instances (made from L<Piper> objects, not L<Piper::Process> objects), holds an array of the contained instance objects.
+
+=head3 main
+
+For any instance in the pipeline, this attribute holds a reference to the outermost container instance.
+
+=head3 parent
+
+For all instances in the pipeline except the outermost container (C<main>), this attribute holds a reference to the instance's immediate container segment.
+
+=head3 path
+
+The full path to the instance, built as the concatenation of all the parent(s) labels and the instance's label, joined by a C</>.  Instances stringify to this attribute.
+
+=head2 INSTANCE METHODS
+
+Methods marked with a (*) should only be called from the outermost instance.
+
+=head3 *dequeue([$num])
+
+Remove at most C<$num> S<(default 1)> processed items from the end of the pipeline.
+
+=head3 *enqueue(@data)
+
+Queue C<@data> for processing by the pipeline.
+
+=head3 find_segment($location)
+
+Find and return the segment instance according to C<$location>, which can be a label or a path-like hierarchy of labels.  See L<injectAfter|/injectAfter($location, @data)> for a detailed description of C<$location>.
+
+=head3 has_children
+
+A boolean indicating whether the instance has any children.
+
+=head3 has_parent
+
+A boolean indicating whether the instance has a parent.
+
+=head3 *is_exhausted
+
+Returns a boolean indicating whether there are any items left to process or dequeue.
+
+=head3 *isnt_exhausted
+
+The returns the opposite of C<is_exhausted>.
+
+=head3 next_segment
+
+Returns the next adjacent segment from the calling segment.  Returns undef for the outermost container.
+
+=head3 pending
+
+Returns the number of items that are queued at some level of the pipeline segment but have not completed processing.
+
+=head3 *prepare([$num])
+
+Process batches while data is still C<pending> until at least C<$num> S<(default 1)> items are C<ready> for C<dequeue>.
+
+=head3 ready
+
+Returns the number of items that have finished processing and are ready for C<dequeue> from the pipeline segment.
+
 =head1 GLOBAL CONFIGURATION
 
-The following global options are configurable from the Piper
+The following global attributes are configurable from the Piper
 import statement.
 
     Ex:
