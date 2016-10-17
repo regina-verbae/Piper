@@ -199,7 +199,7 @@ Send C<@data> to the segment I<at> or I<after> the specified C<$location>.
 
 For each of the above methods, C<$location> must be the label of a segment in the pipeline or a path-like representation of an hierarchy of labels.
 
-For example, in the following pipeline, a few possible C<$location> values include C<'a'>, C<'subpipe/b'>, or C<'main/subpipe/c'>.
+For example, in the following pipeline, a few possible C<$location> values include C<a>, C<subpipe/b>, or C<main/subpipe/c>.
 
     my $pipe = Piper->new(
         { label => 'main' },
@@ -364,7 +364,7 @@ The following attributes have read-only accessors (of the same name).
 
 =head3 children
 
-For container instances (made from L<Piper> objects, not L<Piper::Process> objects), holds an array of the contained instance objects.
+For container instances (made from L<Piper> objects, not L<Piper::Process> objects), holds an arrayref of the contained instance objects.
 
 =head3 main
 
@@ -376,7 +376,7 @@ For all instances in the pipeline except the outermost container (C<main>), this
 
 =head3 path
 
-The full path to the instance, built as the concatenation of all the parent(s) labels and the instance's label, joined by a C</>.  Instances stringify to this attribute.
+The full path to the instance, built as the concatenation of all the parent(s) labels and the instance's label, joined by C</>.  Instances stringify to this attribute.
 
 =head2 INSTANCE METHODS
 

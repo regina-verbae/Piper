@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: 
+## ABSTRACT: An initialized pipeline segment for Piper
 #####################################################################
 
 package Piper::Instance;
@@ -27,32 +27,24 @@ use overload (
 
 =head1 ATTRIBUTES
 
-=head2 args
-
-=cut
-
-has args => (
-    is => 'rwp',
-    isa => ArrayRef,
-    lazy => 1,
-    builder => sub {
-        my ($self) = @_;
-        if ($self->has_parent) {
-            return $self->main->args;
-        }
-        else {
-            return [];
-        }
-    },
-);
-
 =head2 batch_size
 
+The number of items to process at a time for this segment.
+
+If not set, inherits the C<batch_size> of any existing parent(s).  If the segment has no parents, or if none of its parents have a C<batch_size> defined, the default C<batch_size> will be used.  The default is 200, but this can be configured at import of L<Piper>.
+
+To clear a previously-set C<batch_size>, simply set it to C<undef> or use the C<clear_batch_size> method.
+
+    $segment->batch_size(undef);
+    $segment->clear_batch_size;
+
 =cut
 
-# Decorated below
+# around below to set up inheritance through parents
 
 =head2 children
+
+For container instances (made from L<Piper> objects, not L<Piper::Process> objects), holds an arrayref of the contained instance objects.
 
 =cut
 
@@ -68,119 +60,33 @@ has children => (
 
 =head2 debug
 
-Debug level for this segment.  When accessing, inherits the debug level of any
-existing parent(s) if not explicitly set for this segment.
+Debug level for this segment.  When accessing, inherits the debug level of any existing parent(s) if not explicitly set for this segment.  The default level is 0, but can be globally overriden with the environment variable C<PIPER_DEBUG>.
 
-To clear a previously-set debug level for a segment, simply set it to <undef>:
+To clear a previously-set debug level for a segment, simply set it to C<undef> or use the C<clear_debug> method.
 
     $segment->debug(undef);
+    $segment->clear_debug;
 
 =cut
 
-# Decorated below
-
-=head2 directory
-
-=cut
-
-has directory => (
-    is => 'lazy',
-    isa => HashRef,
-    builder => sub {
-        my ($self) = @_;
-        return {} unless $self->has_children;
-        my %dir;
-        for my $child (@{$self->children}) {
-            $dir{$child->path->name} = $child;
-        }
-        return \%dir;
-    },
-);
-
-=head2 drain
-
-=cut
-
-BEGIN { # Enables 'with Piper::Role::Queue'
-has drain => (
-    is => 'lazy',
-    handles => [qw(dequeue ready)],
-    builder => sub {
-        my ($self) = @_;
-        if ($self->has_parent) {
-            return $self->next_segment;
-        }
-        else {
-            return $self->main->config->queue_class->new();
-        }
-    },
-);
-}
+# around below to set up inheritance through parents
 
 =head2 enabled
 
-=cut
+A boolean indicating that the segment is enabled and can accept items for processing.  Inherits this attribute from any existing parent(s) with a default of true.
 
-# Decorated below
+To clear a previously-set enabled attribute, simply set it to C<undef> or use the C<clear_enabled> method.
 
-=head2 follower
-
-=cut
-
-has follower => (
-    is => 'lazy',
-    isa => HashRef,
-    builder => sub {
-        my ($self) = @_;
-        return {} unless $self->has_children;
-        my %follow;
-        for my $index (0..$#{$self->children}) {
-            if (defined $self->children->[$index + 1]) {
-                $follow{$self->children->[$index]} =
-                    $self->children->[$index + 1];
-            }
-            else {
-                $follow{$self->children->[$index]} = $self->drain;
-            }
-        }
-        return \%follow;
-    },
-);
-
-=head2 logger
+    $segment->enabled(undef);
+    $segment->clear_enabled;
 
 =cut
 
-has logger => (
-    is => 'lazy',
-    isa => ConsumerOf['Piper::Role::Logger'],
-    handles => 'Piper::Role::Logger',
-    builder => sub {
-        my ($self) = @_;
-        
-        if ($self->has_parent) {
-            return $self->main->logger;
-        }
-        else {
-            return $self->main->config->logger_class->new();
-        }
-    },
-);
-
-# Cute little trick to auto-insert the instance object
-# as first argument, since $self will become the logger
-# object and lose access to paths/labels/etc.
-around [qw(INFO DEBUG WARN ERROR)] => sub {
-    my ($orig, $self) = splice @_, 0, 2;
-    if (ref $_[0]) {
-        $self->$orig(@_);
-    }
-    else {
-        $self->$orig($self, @_);
-    }
-};
+# around below to set up inheritance through parents
 
 =head2 main
+
+Holds a reference to the outermost container instance for this pipeline.
 
 =cut
 
@@ -200,6 +106,8 @@ has main => (
 
 =head2 parent
 
+Unless this segment is the outermost container (C<main>), this attribute holds a reference to this segment's immediate container.
+
 =cut
 
 has parent => (
@@ -212,6 +120,8 @@ has parent => (
 );
 
 =head2 path
+
+The full path to this segment, built as the concatenation of all the parent(s) labels and the segment's label, joined by C</>.  L<Piper::Instance> objects stringify to this attribute.
 
 =cut
 
@@ -227,26 +137,77 @@ has path => (
     },
 );
 
-=head2 queue
+=head2 verbose
+
+Verbosity level for this segment.  When accessing, inherits verbosity level of any existing parent(s) if not explicitly set for this segment.
+
+To clear a previously-set verbosity level for a segment, simply set it to C<undef> or use the C<clear_verbose> method.
+
+    $segment->verbose(undef);
+    $segment->clear_verbose;
 
 =cut
 
-BEGIN { # Enables 'with Piper::Role::Queue'
-has queue => (
-    is => 'lazy',
-    isa => ConsumerOf['Piper::Role::Queue'],
-    handles => [qw(enqueue)],
-    builder => sub {
-        my ($self) = @_;
-        if ($self->has_children) {
-            return $self->children->[0];
+# Inherit parent settings
+for my $attr (qw(batch_size debug enabled verbose)) {
+    my $clear = "clear_$attr";
+    my $has = "has_$attr";
+
+    around $attr => sub {
+        my ($orig, $self) = splice @_, 0, 2;
+
+        state $default = {
+            batch_size => $self->main->config->batch_size,
+            debug => 0,
+            enabled => 1,
+            verbose => 0,
+        };
+
+        if (@_) {
+            return $self->$clear() if !defined $_[0];
+            return $self->$orig(@_);
         }
         else {
-            return $self->main->config->queue_class->new();
+            return $self->$has()
+                ? $self->$orig()
+                : $self->has_parent
+                    ? $self->parent->$attr()
+                    : $default->{$attr};
         }
-    },
-);
+    };
 }
+
+=head1 METHODS
+
+Methods marked with a (*) should only be called from the outermost instance.
+
+=head2 clear_batch_size
+
+=head2 clear_debug
+
+=head2 clear_enabled
+
+=head2 clear_verbose
+
+Methods for clearing the corresponding attribute.
+
+=head2 has_children
+
+A boolean indicating whether the instance has any children (contained instances).  Will be true for all segments initialized from a L<Piper> object and false for all segments initialized from a L<Piper::Process> object.
+
+=head2 has_parent
+
+A boolean indicating whether the instance has a parent (container instance).  Will be true for all segments except the outermost segment (C<main>).
+
+=head2 *dequeue([$num])
+
+Remove at most C<$num> S<(default 1)> processed items from the end of the segment.
+
+=head2 *enqueue(@data)
+
+Queue C<@data> for processing by the pipeline.
+
+=cut
 
 around enqueue => sub {
     my ($orig, $self, @args) = @_;
@@ -281,86 +242,33 @@ around enqueue => sub {
     $self->$orig(@items);
 };
 
-=head2 segment
-
-=cut
-
-BEGIN { # So we can 'around' on Piper::Role::Segment methods
-has segment => (
-    is => 'ro',
-    isa => ConsumerOf['Piper::Role::Segment'],
-    handles => 'Piper::Role::Segment',
-    required => 1,
-);
-}
-
-=head2 verbose
-
-Verbosity level for this segment.  When accessing, inherits verbosity level of
-any existing parent(s) if not explicitly set for this segment.
-
-To clear a previously-set verbosity level for a segment, simply set it to
-<undef>:
-
-    $segment->verbose(undef);
-
-=cut
-
-# Decorated below
-
-# Inherit parent settings
-for my $attr (qw(batch_size debug enabled verbose)) {
-    my $clear = "clear_$attr";
-    my $has = "has_$attr";
-
-    around $attr => sub {
-        my ($orig, $self) = splice @_, 0, 2;
-
-        state $default = {
-            batch_size => $self->main->config->batch_size,
-            debug => 0,
-            enabled => 1,
-            verbose => 0,
-        };
-
-        if (@_) {
-            return $self->$clear() if !defined $_[0];
-            return $self->$orig(@_);
-        }
-        else {
-            return $self->$has()
-                ? $self->$orig()
-                : $self->has_parent
-                    ? $self->parent->$attr()
-                    : $default->{$attr};
-        }
-    };
-}
-
-=head1 METHODS
-
-=head2 eject(@items)
-
-=cut
-
-sub eject {
-    my $self = shift;
-    $self->INFO("Ejecting to drain", @_);
-    $self->main->drain->enqueue(@_);
-}
-
-=head2 emit(@items)
-
-=cut
-
-sub emit {
-    my $self = shift;
-    $self->INFO("Emitting", @_);
-    # Just collect in the drain
-    $self->drain->enqueue(@_);
-}
-
 =head2 find_segment($location)
+
+Find and return the segment instance according to <$location>, which can be a label or a path-like hierarchy of labels.
+
+For example, in the following pipeline, a few possible C<$location> values include C<a>, C<subpipe/b>, or C<main/subpipe/c>.
+
+    my $pipe = Piper->new(
+        { label => 'main' },
+        subpipe => Piper->new(
+            a => sub { ... },
+            b => sub { ... },
+            c => sub { ... },
+        ),
+    )->init;
+
+If a label is unique within the pipeline, no path is required.  For non-unique labels, searches are performed in a nearest-neighbor, depth-first manner.
+
+For example, in the following pipeline, searching for C<processA> from the handler of C<processB> would find C<main/pipeA/processA>, not C<main/processA>.  So to reach C<main/processA> from C<processB>, the handler would need to search for C<main/processA>.
+
+    my $pipe = Piper->new(
+        { label => 'main' },
+        pipeA => Piper->new(
+            processA => sub { ... },
+            processB => sub { ... },
+        ),
+        processA => sub { ... },
+    );
 
 =cut
 
@@ -394,45 +302,9 @@ sub find_segment {
     return $cache->{$location};
 }
 
-=head2 inject(@items)
+=head2 *is_exhausted
 
-=cut
-
-sub inject {
-    my $self = shift;
-    $self->INFO('Injecting to '.$self->main, @_);
-    $self->main->enqueue(@_);
-}
-
-=head2 injectAfter($location, @items)
-
-=cut
-
-sub injectAfter {
-    my $self = shift;
-    my $location = shift;
-    my $segment = $self->find_segment($location);
-    $self->ERROR("Could not find $location to injectAfter", @_)
-        if !defined $segment;
-    $self->INFO("Injecting to $location", @_);
-    $segment->drain->enqueue(@_);
-}
-
-=head2 injectAt($location, @items)
-
-=cut
-
-sub injectAt {
-    my $self = shift;
-    my $location = shift;
-    my $segment = $self->find_segment($location);
-    $self->ERROR("Could not find $location to injectAt", @_)
-        if !defined $segment;
-    $self->INFO("Injecting to $location", @_);
-    $segment->enqueue(@_);
-}
-
-=head2 is_exhausted
+Returns a boolean indicating whether there are any items left to process or dequeue.
 
 =cut
 
@@ -444,6 +316,8 @@ sub is_exhausted {
 
 =head2 isnt_exhausted
 
+Returns the opposite of C<is_exhausted>.
+
 =cut
 
 sub isnt_exhausted {
@@ -453,7 +327,7 @@ sub isnt_exhausted {
 
 =head2 next_segment
 
-Returns the next adjacent segment for $self.  Returns undef if $self is the outermost segment.
+Returns the next adjacent segment from the calling segment.  Returns undef if for the outermost container.
 
 =cut
 
@@ -464,6 +338,8 @@ sub next_segment {
 }
 
 =head2 pending
+
+Returns the number of items that are queued at some level of the segment but have not completed processing.
 
 =cut
 
@@ -477,11 +353,9 @@ sub pending {
     }
 }
 
-=head2 recycle(@items)
+=head2 *prepare([$num])
 
-=cut
-
-=head2 prepare([$num])
+Process batches while data is still C<pending> until at least C<$num> S<(default 1)> items are C<ready> for C<dequeue>.
 
 =cut
 
@@ -495,15 +369,286 @@ sub prepare {
     return $self->ready;
 }
 
+=head2 ready
+
+Returns the number of items that have finished processing and are ready for C<dequeue> from the segment.
+
+=cut
+
+=head1 FLOW CONTROL METHODS
+
+These methods are available for use within process handler subroutines (see L<Piper::Process>).
+
+=head2 eject(@data)
+
+Send C<@data> to the drain of the outermost segment, making the C<@data> immediately ready for C<dequeue>.
+
+=cut
+
+sub eject {
+    my $self = shift;
+    $self->INFO("Ejecting to drain", @_);
+    $self->main->drain->enqueue(@_);
+}
+
+=head2 emit(@data)
+
+Send C<@data> to the next segment in the pipeline.  If the segment is the last in the pipeline, emits to the drain, making the C<@data> ready for C<dequeue>.
+
+=cut
+
+sub emit {
+    my $self = shift;
+    $self->INFO("Emitting", @_);
+    # Just collect in the drain
+    $self->drain->enqueue(@_);
+}
+
+=head2 inject(@data)
+
+Send C<@data> to the queue of the outermost segment.
+
+=cut
+
+sub inject {
+    my $self = shift;
+    $self->INFO('Injecting to '.$self->main, @_);
+    $self->main->enqueue(@_);
+}
+
+=head2 injectAfter($location, @data)
+
+Send C<@data> to the segment I<after> the specified C<$location>.  See L<find_segment|/find_segment($location)> for a detailed description of C<$location>.
+
+=cut
+
+sub injectAfter {
+    my $self = shift;
+    my $location = shift;
+    my $segment = $self->find_segment($location);
+    $self->ERROR("Could not find $location to injectAfter", @_)
+        if !defined $segment;
+    $self->INFO("Injecting to $location", @_);
+    $segment->drain->enqueue(@_);
+}
+
+=head2 injectAt($location, @data)
+
+Send C<@data> to the segment I<at> the specified C<$location>.  See L<find_segment|/find_segment($location)> for a detailed description of C<$location>.
+
+=cut
+
+sub injectAt {
+    my $self = shift;
+    my $location = shift;
+    my $segment = $self->find_segment($location);
+    $self->ERROR("Could not find $location to injectAt", @_)
+        if !defined $segment;
+    $self->INFO("Injecting to $location", @_);
+    $segment->enqueue(@_);
+}
+
+=head2 recycle(@data)
+
+Re-queue C<@data> to the current segment.
+
+=cut
+
 sub recycle {
     my $self = shift;
     $self->INFO("Recycling", @_);
     $self->enqueue(@_);
 }
 
-=head1 PRIVATE METHODS
+=head1 LOGGING AND DEBUGGING METHODS
+
+See L<Piper::Logger> for detailed descriptions.
+
+=head2 INFO($message, [@items])
+
+Prints an informational C<$message> to STDERR if either the debug or verbosity level for the segment S<< is > 0 >>.
+
+=head2 DEBUG
+
+Prints a debug C<$message> to STDERR if the debug level for the segment S<< is > 0 >>.
+
+=head2 WARN
+
+Issues a warning with C<$message> via L<Carp::carp|Carp>.
+
+=head2 ERROR
+
+Throws an error with C<$message> via L<Carp::croak|Carp>.
+
+=head1 UTILITY ATTRIBUTES
+
+=head2 args
+
+The arguments passed to the C<init> method of L<Piper> or L<Piper::Process>.
+
+=cut
+
+has args => (
+    is => 'rwp',
+    isa => ArrayRef,
+    lazy => 1,
+    builder => sub {
+        my ($self) = @_;
+        if ($self->has_parent) {
+            return $self->main->args;
+        }
+        else {
+            return [];
+        }
+    },
+);
+
+=head2 directory
+
+A hashref of the segment's children, keyed by their labels.  Used by C<find_segment>.
+
+=cut
+
+has directory => (
+    is => 'lazy',
+    isa => HashRef,
+    builder => sub {
+        my ($self) = @_;
+        return {} unless $self->has_children;
+        my %dir;
+        for my $child (@{$self->children}) {
+            $dir{$child->path->name} = $child;
+        }
+        return \%dir;
+    },
+);
+
+=head2 drain
+
+A reference to the location where the segment's processed items are emitted.
+
+=cut
+
+BEGIN { # Enables 'with Piper::Role::Queue'
+has drain => (
+    is => 'lazy',
+    handles => [qw(dequeue ready)],
+    builder => sub {
+        my ($self) = @_;
+        if ($self->has_parent) {
+            return $self->next_segment;
+        }
+        else {
+            return $self->main->config->queue_class->new();
+        }
+    },
+);
+}
+
+=head2 follower
+
+A hashref of children paths to the child's next adjacent segment.  Used by C<next_segment>.
+
+=cut
+
+has follower => (
+    is => 'lazy',
+    isa => HashRef,
+    builder => sub {
+        my ($self) = @_;
+        return {} unless $self->has_children;
+        my %follow;
+        for my $index (0..$#{$self->children}) {
+            if (defined $self->children->[$index + 1]) {
+                $follow{$self->children->[$index]} =
+                    $self->children->[$index + 1];
+            }
+            else {
+                $follow{$self->children->[$index]} = $self->drain;
+            }
+        }
+        return \%follow;
+    },
+);
+
+=head2 logger
+
+A reference to the logger for the pipeline.  Handles L</LOGGING AND DEBUGGING> methods.
+
+=cut
+
+has logger => (
+    is => 'lazy',
+    isa => ConsumerOf['Piper::Role::Logger'],
+    handles => 'Piper::Role::Logger',
+    builder => sub {
+        my ($self) = @_;
+        
+        if ($self->has_parent) {
+            return $self->main->logger;
+        }
+        else {
+            return $self->main->config->logger_class->new();
+        }
+    },
+);
+
+# Cute little trick to auto-insert the instance object
+# as first argument, since $self will become the logger
+# object and lose access to paths/labels/etc.
+around [qw(INFO DEBUG WARN ERROR)] => sub {
+    my ($orig, $self) = splice @_, 0, 2;
+    if (ref $_[0]) {
+        $self->$orig(@_);
+    }
+    else {
+        $self->$orig($self, @_);
+    }
+};
+
+=head2 queue
+
+A reference to the location where data is queued for processing by this segment.
+
+=cut
+
+BEGIN { # Enables 'with Piper::Role::Queue'
+has queue => (
+    is => 'lazy',
+    isa => ConsumerOf['Piper::Role::Queue'],
+    handles => [qw(enqueue)],
+    builder => sub {
+        my ($self) = @_;
+        if ($self->has_children) {
+            return $self->children->[0];
+        }
+        else {
+            return $self->main->config->queue_class->new();
+        }
+    },
+);
+}
+
+=head2 segment
+
+The L<Piper> or L<Piper::Process> object from which the instance segment was created.
+
+=cut
+
+BEGIN { # So we can 'around' on Piper::Role::Segment methods
+has segment => (
+    is => 'ro',
+    isa => ConsumerOf['Piper::Role::Segment'],
+    handles => 'Piper::Role::Segment',
+    required => 1,
+);
+}
+
+=head1 UTILITY METHODS
 
 =head2 descendant($path, $referrer)
+
+Returns a child segment if its path ends with C<$path>.  Does not search children with a path of C<$referrer>, as it was presumably already searched by a previous iteration of the search.  Used by C<find_segment>.
 
 =cut
 
@@ -568,6 +713,8 @@ sub descendant {
 
 =head2 pressure
 
+An integer metric for the "fullness" of the pending queue.  For handler instances (initialized from L<Piper::Process> objects), it is the percentage of pending items vs the batch size of the segment.  For container instances (initialized from L<Piper> objects), is is the maximum C<pressure> of the contained instances.  Used by process_batch for choosing which segment to process.
+
 =cut
 
 # Metric for "how full" the pending queue is
@@ -582,6 +729,10 @@ sub pressure {
 }
 
 =head2 process_batch
+
+Chooses the "best" segment for processing, and processes a batch for that segment.
+
+It first attempts to choose the full-batch segment (C<< pending >= batch_size >>) closest to the end of the pipeline.  If there are no full-batch segments, it chooses the segment closest to being full.
 
 =cut
 
