@@ -117,12 +117,7 @@ sub make_message {
         . $message;
 
     if ($self->verbose_level($segment) > 1 and @items) {
-        # Load Data::Dump the first time it's needed.
-        state $loaded = 0;
-        unless ($loaded) {
-            require Data::Dump;
-            $loaded++;
-        }
+        require Data::Dump;
 
         $message .= ' ' . Data::Dump::dump(@items);
     }
