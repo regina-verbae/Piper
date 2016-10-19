@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Simple FIFO queue
+## ABSTRACT: Simple FIFO queue used by Piper
 #####################################################################
 
 package Piper::Queue;
@@ -21,9 +21,9 @@ with 'Piper::Role::Queue';
   use Piper::Queue;
 
   my $queue = Piper::Queue->new();
-  $queue->enqueue(1, 2);
+  $queue->enqueue(qw(x y));
   $queue->ready;   # 2
-  $queue->dequeue; # 1
+  $queue->dequeue; # 'x'
 
 =head1 DESCRIPTION
 
@@ -45,16 +45,11 @@ has queue => (
 
 =head2 dequeue($num)
 
-Remove and return at most $num items from the
-queue.  The default $num is 1.
+Remove and return at most C<$num> items from the queue.  The default S<C<$num> is 1>.
 
-If $num is greater than the number of items
-remaining in the queue, only the number
-remaining will be dequeued.
+If C<$num> is greater than the number of items remaining in the queue, only the number remaining will be dequeued.
 
-Returns an array of items if wantarray,
-otherwise returns the last of the dequeued
-items, which allows singleton dequeues:
+Returns an array of items if wantarray, otherwise returns the last of the dequeued items, which allows singleton dequeues:
 
     my @results = $queue->dequeue($num);
     my $single  = $queue->dequeue;
@@ -69,7 +64,7 @@ sub dequeue {
 
 =head2 enqueue(@items)
 
-Add @items to the queue.
+Add C<@items> to the queue.
 
 =cut
 
@@ -90,3 +85,17 @@ sub ready {
 }
 
 1;
+
+__END__
+
+=head1 SEE ALSO
+
+=over
+
+=item L<Piper::Role::Queue>
+
+=item L<Piper>
+
+=back
+
+=cut
