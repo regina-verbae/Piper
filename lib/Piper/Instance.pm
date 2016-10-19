@@ -25,6 +25,10 @@ use overload (
     fallback => 1,
 );
 
+=head1 DESCRIPTION
+
+The object representing an initialized pipeline segment in the L<Piper> system.
+
 =head1 ATTRIBUTES
 
 =head2 batch_size
@@ -44,7 +48,7 @@ To clear a previously-set C<batch_size>, simply set it to C<undef> or use the C<
 
 =head2 children
 
-For container instances (made from L<Piper> objects, not L<Piper::Process> objects), holds an arrayref of the contained instance objects.
+For container instances (made from L<Piper> objects, not L<Piper::Process> objects), the C<children> attribute holds an arrayref of the contained instance objects.
 
 =cut
 
@@ -86,7 +90,7 @@ To clear a previously-set enabled attribute, simply set it to C<undef> or use th
 
 =head2 main
 
-Holds a reference to the outermost container instance for this pipeline.
+Holds a reference to the outermost container instance for the pipeline.
 
 =cut
 
@@ -106,7 +110,7 @@ has main => (
 
 =head2 parent
 
-Unless this segment is the outermost container (C<main>), this attribute holds a reference to this segment's immediate container.
+Unless this segment is the outermost container (C<main>), this attribute holds a reference to the segment's immediate container.
 
 =cut
 
@@ -259,7 +263,7 @@ For example, in the following pipeline, a few possible C<$location> values inclu
 
 If a label is unique within the pipeline, no path is required.  For non-unique labels, searches are performed in a nearest-neighbor, depth-first manner.
 
-For example, in the following pipeline, searching for C<processA> from the handler of C<processB> would find C<main/pipeA/processA>, not C<main/processA>.  So to reach C<main/processA> from C<processB>, the handler would need to search for C<main/processA>.
+For example, in the following pipeline, searching for C<processA> from C<processB> would find C<main/pipeA/processA>, not C<main/processA>.  So to reach C<main/processA> from C<processB>, the appropriate search would be for C<main/processA>.
 
     my $pipe = Piper->new(
         { label => 'main' },
@@ -314,7 +318,7 @@ sub is_exhausted {
     return $self->prepare ? 0 : 1;
 }
 
-=head2 isnt_exhausted
+=head2 *isnt_exhausted
 
 Returns the opposite of C<is_exhausted>.
 
@@ -327,7 +331,7 @@ sub isnt_exhausted {
 
 =head2 next_segment
 
-Returns the next adjacent segment from the calling segment.  Returns undef if for the outermost container.
+Returns the next adjacent segment from the calling segment.  Returns C<undef> for the outermost container.
 
 =cut
 
@@ -418,7 +422,7 @@ sub inject {
 
 =head2 injectAfter($location, @data)
 
-Send C<@data> to the segment I<after> the specified C<$location>.  See L<find_segment|/find_segment($location)> for a detailed description of C<$location>.
+Send C<@data> to the segment I<after> the specified C<$location>.  See L<C<find_segment>|/find_segment($location)> for a detailed description of C<$location>.
 
 =cut
 
@@ -434,7 +438,7 @@ sub injectAfter {
 
 =head2 injectAt($location, @data)
 
-Send C<@data> to the segment I<at> the specified C<$location>.  See L<find_segment|/find_segment($location)> for a detailed description of C<$location>.
+Send C<@data> to the segment I<at> the specified C<$location>.  See L<C<find_segment>|/find_segment($location)> for a detailed description of C<$location>.
 
 =cut
 
@@ -468,23 +472,25 @@ See L<Piper::Logger> for detailed descriptions.
 
 Prints an informational C<$message> to STDERR if either the debug or verbosity level for the segment S<< is > 0 >>.
 
-=head2 DEBUG
+=head2 DEBUG($message, [@items])
 
 Prints a debug C<$message> to STDERR if the debug level for the segment S<< is > 0 >>.
 
-=head2 WARN
+=head2 WARN($message, [@items])
 
 Issues a warning with C<$message> via L<Carp::carp|Carp>.
 
-=head2 ERROR
+=head2 ERROR($message, [@items])
 
 Throws an error with C<$message> via L<Carp::croak|Carp>.
 
 =head1 UTILITY ATTRIBUTES
 
+None of these should be directly accessed.  Documented for contributors and source-code readers.
+
 =head2 args
 
-The arguments passed to the C<init> method of L<Piper> or L<Piper::Process>.
+The arguments passed to the C<init> method of L<Piper>.
 
 =cut
 
@@ -646,6 +652,8 @@ has segment => (
 
 =head1 UTILITY METHODS
 
+None of these should be directly accessed.  Documented for contributors and source-code readers.
+
 =head2 descendant($path, $referrer)
 
 Returns a child segment if its path ends with C<$path>.  Does not search children with a path of C<$referrer>, as it was presumably already searched by a previous iteration of the search.  Used by C<find_segment>.
@@ -767,3 +775,19 @@ sub process_batch {
 }
 
 1;
+
+__END__
+
+=head1 SEE ALSO
+
+=over
+
+=item L<Piper>
+
+=item L<Piper::Process>
+
+=item L<Piper::Logger>
+
+=back
+
+=cut
