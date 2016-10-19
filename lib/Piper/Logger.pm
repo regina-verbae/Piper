@@ -16,20 +16,23 @@ use Moo;
 
 with qw(Piper::Role::Logger);
 
+=head1 DESCRIPTION
+
+The logging and debugging mechanism used by L<Piper>.
+
 =head1 CONSTRUCTOR
 
-=head2 new(%attributes)
+=head2 new
 
 =head1 METHODS
 
 =head2 DEBUG($segment, $message, @items)
 
-This method will be a no-op unless $self->debug_level($segment) > 0.
+This method is a no-op unless S<<< C<< $self->debug_level($segment) > 0 >> >>>.
 
 Prints an informational message to STDERR.
 
-Uses the method make_message to format the printed message according to
-debug/verbose levels and the arguments.
+Uses the method C<make_message> to format the printed message according to the debug/verbose levels of C<$segment>.
 
 Labels the message by pre-pending 'Info: ' to the formatted message.
 
@@ -42,10 +45,9 @@ sub DEBUG {
 
 =head2 ERROR($segment, $message, @items)
 
-Prints an error to STDERR and dies via Carp::croak.
+Prints an error to STDERR and dies via L<Carp::croak|Carp>.
 
-Uses the method make_message to format the printed message according to
-debug/verbose levels and the arguments.
+Uses the method C<make_message> to format the printed message according to the debug/verbose levels of C<$segment>.
 
 Labels the message by pre-pending 'Error: ' to the formatted message.
 
@@ -58,13 +60,12 @@ sub ERROR {
 
 =head2 INFO($segment, $message, @items)
 
-This method will be a no-op unless $self->verbose_level($segment) > 0 or
-$self->debug_level($segment) > 0.
+This method is a no-op unless S<<< C<< $self->verbose_level($segment) > 0 >> >>> or
+S<<< C<< $self->debug_level($segment) > 0 >> >>>.
 
 Prints an informational message to STDERR.
 
-Uses the method make_message to format the printed message according to
-debug/verbose levels and the arguments.
+Uses the method C<make_message> to format the printed message according to the debug/verbose levels of C<$segment>.
 
 Labels the message by pre-pending 'Info: ' to the formatted message.
 
@@ -77,10 +78,9 @@ sub INFO {
 
 =head2 WARN($segment, $message, @items)
 
-Prints a warning to STDERR via Carp::carp.
+Prints a warning to STDERR via L<Carp::carp|Carp>.
 
-Uses the method make_message to format the printed message according to
-debug/verbose levels and the arguments.
+Uses the method C<make_message> to format the printed message according to the debug/verbose levels of C<$segment>.
 
 Labels the message by pre-pending 'Warning: ' to the formatted message.
 
@@ -95,22 +95,17 @@ sub WARN {
 
 =head2 make_message($segment, $message, @items)
 
-Formats and returns the message according to debug/verbose levels and the
-provided arguments.
+Formats and returns the message according to the debug/verbose levels of C<$segment> and the provided arguments.
 
-There are two/three parts to the message:
+There are two-three parts to the message:
 
     segment_name: message <items>
 
-The message part is simply $message for all debug/verbose levels.
+The message part is simply C<$message> for all debug/verbose levels.
 
-The <items> part is only included when $self->verbose_level($segment) > 1.  It
-is a comma-separated join of @items, surrounded by angle brackets (<>).
+The <items> part is only included when S<<< C<< $self->verbose_level($segment) > 1 >> >>>.  It is created by C<Data::Dump::dump(@items)>.
 
-If the verbosity and debug levels are both 0, segment_name is simply the
-segment's label.  If $self->verbose_level($segment) > 0, the full path of the
-segment is used instead of the label.  If $self->debug_level($segment) > 1, the
-segment's ID is appended to the label/path in parentheses.
+If the verbosity and debug levels are both 0, segment_name is simply the segment's C<label>.  If S<<< C<< $self->verbose_level($segment) > 0 >> >>>, the full path of C<$segment> is used instead of C<label>.  If S<<< C<< $self->debug_level($segment) > 1 >> >>>, the segment's C<id> is appended to C<label>/C<path> in parentheses.
 
 =cut
 
@@ -122,7 +117,13 @@ sub make_message {
         . $message;
 
     if ($self->verbose_level($segment) > 1 and @items) {
-        require Data::Dump;
+        # Load Data::Dump the first time it's needed.
+        state $loaded = 0;
+        unless ($loaded) {
+            require Data::Dump;
+            $loaded++;
+        }
+
         $message .= ' ' . Data::Dump::dump(@items);
     }
 
@@ -133,8 +134,7 @@ sub make_message {
 
 =head2 verbose_level($segment)
 
-These methods determine the appropriate debug and verbosity levels for the
-given $segment, while respecting any environment variable overrides.
+These methods determine the appropriate debug and verbosity levels for the given $segment, while respecting any environment variable overrides.
 
 Available environment variable overrides:
 
@@ -144,3 +144,17 @@ Available environment variable overrides:
 =cut
 
 1;
+
+__END__
+
+=head1 SEE ALSO
+
+=over
+
+=item L<Piper::Role::Logger>
+
+=item L<Piper>
+
+=back
+
+=cut
