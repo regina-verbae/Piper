@@ -11,6 +11,7 @@ use warnings;
 
 use Carp;
 use Types::Common::Numeric qw(PositiveInt);
+use Types::LoadableClass qw(ClassDoes);
 use Types::Standard qw(ClassName);
 
 use Moo;
@@ -67,15 +68,7 @@ The default logger_class is Piper::Logger.
 
 has logger_class => (
     is => 'lazy',
-    isa => sub {
-        my $value = shift;
-        eval "require $value";
-        ClassName->assert_valid($value);
-        unless ($value->does('Piper::Role::Logger')) {
-            croak "ERROR: logger_class '$value' does not consume role 'Piper::Role::Logger'\n";
-        }
-        return 1;
-    },
+    isa => ClassDoes['Piper::Role::Logger'],
     default => 'Piper::Logger',
 );
 
@@ -93,15 +86,7 @@ The default queue_class is Piper::Queue.
 
 has queue_class => (
     is => 'lazy',
-    isa => sub {
-        my $value = shift;
-        eval "require $value";
-        ClassName->assert_valid($value);
-        unless ($value->does('Piper::Role::Queue')) {
-            croak "ERROR: queue_class '$value' does not consume role 'Piper::Role::Queue'\n";
-        }
-        return 1;
-    },
+    isa => ClassDoes['Piper::Role::Queue'],
     default => 'Piper::Queue',
 );
 
