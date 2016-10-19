@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Simple path object for labeling locations in pipelines
+## ABSTRACT: Simple path object for labeling locations in Piper pipelines
 #####################################################################
 
 package Piper::Path;
@@ -43,22 +43,17 @@ use overload (
 
 =head1 DESCRIPTION
 
-Simple filesystem-like representation of a
-pipeline segment's placement in the pipeline,
-relative to containing segments.
+Simple filesystem-like representation of a pipeline segment's placement in the pipeline, relative to containing segments.
 
 =head1 CONSTRUCTOR
 
 =head2 new(@path_segments)
 
-Creates a Piper::Path object from the given
-path segments.
+Creates a L<Piper::Path> object from the given path segments.
 
-Segments may be single path elements (similar
-to a file name), joined path elements (with '/'),
-or Piper::Path objects.
+Segments may be single path elements (similar to a file name), joined path elements S<(with C</>)>, or L<Piper::Path> objects.
 
-The following create equivalent objects:
+The following examples create equivalent objects:
 
     Piper::Path->new(qw(grandparent parent child));
     Piper::Path->new(qw(grandparent/parent child));
@@ -90,7 +85,7 @@ around BUILDARGS => sub {
         }
     }
     return $self->$orig(
-        path => [ @pieces ],
+        path => \@pieces,
     );
 };
 
@@ -98,8 +93,7 @@ around BUILDARGS => sub {
 
 =head2 child(@segments)
 
-Returns a new Piper::Path object representing the
-appropriate child of $self.
+Returns a new L<Piper::Path> object representing the appropriate child of L<$self>.
 
     $path                     # grampa/parent
     $path->child(qw(child))   # grampa/parent/child
@@ -113,7 +107,7 @@ sub child {
 
 =head2 name
 
-Returns the last segment of the path, or the 'basename'.
+Returns the last segment of the path, similar to the C<basename> of a filesystem path.
 
     $path         # foo/bar/baz
     $path->name   # baz
@@ -141,12 +135,12 @@ sub split {
 
 =head2 stringify
 
-Returns a string representation of the path, which is
-simply a join of the path segments with '/'.
+Returns a string representation of the path, which is simply a join of the path segments with C</>.
 
-Note: String context is overloaded to call this method.
+String context is overloaded to call this method.  The following are equivalent:
 
-    "$path"  is equivalent to $path->stringify
+    $path->stringify
+    "$path"
 
 =cut
 
@@ -156,3 +150,15 @@ sub stringify {
 }
 
 1;
+
+__END__
+
+=head1 SEE ALSO
+
+=over
+
+=item L<Piper>
+
+=back
+
+=cut
