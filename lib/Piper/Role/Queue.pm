@@ -55,6 +55,14 @@ Returns the number of items that are ready to be dequeued.
 
 requires 'ready';
 
+=head2 requeue(@items)
+
+Inserts the C<@items> to the top of the queue in an order such that C<dequeue(1)> would subsequently return C<$items[0]> and so forth.
+
+=cut
+
+requires 'requeue';
+
 =head1 TESTING
 
 Verify the functionality of a new queue class by downloading the L<Piper> tests and running the

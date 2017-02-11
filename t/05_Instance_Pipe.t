@@ -430,10 +430,11 @@ use Piper;
 
         # Test recycle
         subtest "$APP - recycle" => sub {
+            $CHILD->enqueue(4);
             $CHILD->recycle(2);
-            is($SMALL->pending, 1, 'fake recycle - ok');
+            is($SMALL->pending, 2, 'fake recycle - pending ok');
             $SMALL->process_batch;
-            $SMALL->dequeue;
+            is_deeply([ $SMALL->dequeue(2) ], [ 1, 2 ], 'fake recycle - dequeue value ok');
 
             my $RECYCLER = Piper->new(
                 mod_power_2 => {

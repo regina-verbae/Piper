@@ -22,12 +22,14 @@ with 'Piper::Role::Queue';
 
   my $queue = Piper::Queue->new();
   $queue->enqueue(qw(x y));
-  $queue->ready;   # 2
-  $queue->dequeue; # 'x'
+  $queue->ready;         # 2
+  $queue->dequeue;       # 'x'
+  $queue->requeue('x');
+  $queue->dequeue;       # 'x'
 
 =head1 DESCRIPTION
 
-A simple FIFO queue.
+A simple queue.
 
 =head1 CONSTRUCTOR
 
@@ -82,6 +84,17 @@ Returns the number of elements in the queue.
 sub ready {
     my ($self) = @_;
     return scalar @{$self->queue};
+}
+
+=head2 requeue(@items)
+
+Inserts C<@items> to the top of the queue in an order such that C<dequeue(1)> would subsequently return C<$items[0]> and so forth.
+
+=cut
+
+sub requeue {
+    my $self = shift;
+    unshift @{$self->queue}, @_;
 }
 
 1;

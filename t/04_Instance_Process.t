@@ -234,10 +234,11 @@ my $TEST = Piper::Process->new(half => {
 # Test recycle
 {
     subtest "$APP - recycle" => sub {
+        $TEST->enqueue(4);
         $TEST->recycle(2);
-        is($TEST->pending, 1, 'fake recycle - ok');
+        is($TEST->pending, 2, 'fake recycle - pending ok');
         $TEST->process_batch;
-        $TEST->dequeue;
+        is_deeply([ $TEST->dequeue(2) ], [ 1, 2 ], 'fake recycle - dequeue value ok');
 
         my $RECYCLER = Piper::Process->new(mod_power_2 => {
             batch_size => 3,

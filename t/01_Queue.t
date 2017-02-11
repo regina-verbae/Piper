@@ -71,6 +71,7 @@ $TEST{'blessed objects'} = {
 for my $test (keys %TEST) {
     subtest "$APP - $test" => sub {
         my @items = @{$TEST{$test}{data}};
+        my @top = @items[0..2];
 
         is($QUEUE->ready, 0, 'ready - before enqueue');
         
@@ -117,6 +118,23 @@ for my $test (keys %TEST) {
 
         if (exists $TEST{$test}{extra}) {
             $TEST{$test}{extra}->($got, $exp, 'dequeue default - no wantarray');
+        }
+
+        $QUEUE->requeue(@top);
+
+        is($QUEUE->ready, @items + @top, 'ready - after requeue');
+
+        $got = [ $QUEUE->dequeue(scalar @top) ];
+        $exp = \@top;
+
+        is_deeply(
+            $got,
+            $exp,
+            'requeue'
+        );
+
+        if (exists $TEST{$test}{extra}) {
+            $TEST{$test}{extra}->($got, $exp, 'requeue');
         }
 
         $got = [ $QUEUE->dequeue( scalar @items + 3 ) ];

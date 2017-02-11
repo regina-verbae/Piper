@@ -454,14 +454,14 @@ sub injectAt {
 
 =head2 recycle(@data)
 
-Re-queue C<@data> to the current segment.
+Re-queue C<@data> to the top of the current segment in an order such that C<dequeue(1)> would subsequently return C<$data[0]> and so forth.
 
 =cut
 
 sub recycle {
     my $self = shift;
     $self->INFO("Recycling", @_);
-    $self->enqueue(@_);
+    $self->requeue(@_);
 }
 
 =head1 LOGGING AND DEBUGGING METHODS
@@ -622,7 +622,7 @@ BEGIN { # Enables 'with Piper::Role::Queue'
 has queue => (
     is => 'lazy',
     isa => ConsumerOf['Piper::Role::Queue'],
-    handles => [qw(enqueue)],
+    handles => [qw(enqueue requeue)],
     builder => sub {
         my ($self) = @_;
         if ($self->has_children) {
