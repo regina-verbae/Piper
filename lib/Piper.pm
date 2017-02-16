@@ -38,9 +38,21 @@ sub import {
 
     use Piper;
 
-    my $pipe = Piper->new(
-        
-    )->init();
+    my $pipeline = Piper->new(
+        first_process => sub {
+            my ($instance, $batch) = @_;
+            $instance->emit( map { ... } @$batch );
+        },
+        second_processes => Piper->new(...),
+        final_process => sub { ... },
+    )->init;
+
+    $pipeline->enqueue(@data);
+
+    while ($pipeline->isnt_exhausted) {
+        my $item = $pipeline->dequeue;
+        ...
+    }
 
 =head1 DESCRIPTION
 
@@ -142,6 +154,50 @@ If the C<$segment> already has a label, C<$label> will override it.
         },
     );
 
+=head1 INITIALIZATION
+
+Piper segments were designed to be easily reusable.  Prior to initialization,
+L<Piper> and L<Piper::Process> objects do not process data; they simply contain the
+blueprint for creating the pipeline.  As such, blueprints for commonly-used
+pipeline segments can be stored in package libraries and imported wherever
+needed.
+
+To create a functioning pipeline from one such blueprint, simply call the
+C<init> method on the outermost segment.  The C<init> method returns a
+L<Piper::Instance> object of the outermost segment, which is the realization of the pipeline design, and which contains L<Piper::Instance> objects created from all its contained segments.
+
+Initialization fuses the pipeline segments together, establishes the
+relationships between the segments, and initializes the dataflow
+infrastructure.
+
+The C<init> method may be chained from the constructor if the blueprint object is
+not needed:
+
+    my $instance = Piper->new(...)->init;
+
+Any arguments passed to the C<init> method will be cached and made available to
+each handler in the pipeline (see the L</PROCESS HANDLER> section for full
+description of handlers).  This is a great way to share a resource (such as a
+database handle) among process handlers.
+
+    my $pipe = Piper->new(
+        query => sub {
+            my ($instance, $batch, $dbh) = @_;
+            $instance->emit(
+                $dbh->do_query(@$batch)
+            );
+        },
+        ...
+    );
+    my $instance = $pipe->init($dbh);
+
+Instances are ready to accept data for processing:
+
+    $instance->enqueue(@data);
+    while ($instance->isnt_exhausted) {
+        my $result = $instance->dequeue;
+    }
+
 =head1 PROCESS HANDLER
 
 L<Piper::Process> objects have the same L</SEGMENT ATTRIBUTES> as L<Piper> objects, but have an additional required attribute known as its C<handler>.
@@ -185,11 +241,11 @@ The following methods may be called from the C<$instance> object passed as the f
 
 =head2 C<emit(@data)>
 
-Send C<@data> to the next segment in the pipeline.
+Send C<@data> to the next segment in the pipeline.  If the instance is the last in the pipeline, emits to the drain, making the C<@data> ready for C<dequeue>.
 
 =head2 C<recycle(@data)>
 
-Re-queue C<@data> to the current segment.
+Re-queue C<@data> to the top of the current segment in an order such that C<dequeue(1)> would subsequently return C<$data[0]> and so forth.
 
 =head2 C<injectAt($location, @data)>
 
@@ -210,7 +266,7 @@ For example, in the following pipeline, a few possible C<$location> values inclu
         ),
     );
 
-If a label is unique within the pipeline, no path is required.  For non-unique labels, searches are performed in a nearest-neighbor, depth-first manner.
+If a label is unique within the pipeline, only the label is required.  For non-unique labels, searches are performed in a nearest-neighbor, depth-first manner.
 
 For example, in the following pipeline, searching for C<processA> from the handler of C<processB> would find C<main/pipeA/processA>, not C<main/processA>.  So to reach C<main/processA> from C<processB>, the handler would need to search for C<main/processA>.
 
@@ -230,50 +286,6 @@ Send C<@data> to the queue of the outermost segment.  Equivalent to C<injectAt('
 =head2 C<eject(@data)>
 
 Send C<@data> to the drain of the outermost segment, making the C<@data> immediately ready for C<dequeue>.
-
-=head1 INITIALIZATION
-
-Piper segments were designed to be easily reusable.  Prior to initialization,
-L<Piper> and L<Piper::Process> objects do not process data; they simply contain the
-blueprint for creating the pipeline.  As such, blueprints for commonly-used
-pipeline segments can be stored in package libraries and imported wherever
-needed.
-
-To create a functioning pipeline from one such blueprint, simply call the
-C<init> method on the outermost segment.  The C<init> method returns a
-L<Piper::Instance> object, which is the realization of the pipeline design.
-
-Initialization fuses the pipeline segments together, establishes the
-relationships between the segments, and initializes the dataflow
-infrastructure.
-
-The C<init> method may be chained from the constructor if the blueprint object is
-not needed:
-
-    my $instance = Piper->new(...)->init;
-
-Any arguments passed to the C<init> method will be cached and made available to
-each handler in the pipeline (see the L</PROCESS HANDLER> section for full
-description of handlers).  This is a great way to share a resource (such as a
-database handle) among process handlers.
-
-    my $pipe = Piper->new(
-        query => sub {
-            my ($instance, $batch, $dbh) = @_;
-            $instance->emit(
-                $dbh->do_query(@$batch)
-            );
-        },
-        ...
-    );
-    my $instance = $pipe->init($dbh);
-
-Instances are ready to accept data for processing:
-
-    $instance->enqueue(@data);
-    while ($instance->isnt_exhausted) {
-        my $result = $instance->dequeue;
-    }
 
 =head1 SEGMENT ATTRIBUTES
 
@@ -307,7 +319,7 @@ These example C<allow> subroutines are equivalent:
     allow => sub { $_ =~ /^\d+$/ }
     allow => sub { $_[0] =~ /^\d+$/ }
 
-=head2 batch_size*
+=head2 *batch_size
 
 The number of items to process at a time for the segment.
 
@@ -408,7 +420,7 @@ Returns a boolean indicating whether there are any items left to process or dequ
 
 =head3 *isnt_exhausted
 
-The returns the opposite of C<is_exhausted>.
+Returns the opposite of C<is_exhausted>.
 
 =head3 next_segment
 
