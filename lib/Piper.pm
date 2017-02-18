@@ -24,6 +24,8 @@ use overload (
     fallback => 1,
 );
 
+our $VERSION = 0.01;
+
 my $CONFIG;
 
 sub import {
