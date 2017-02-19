@@ -24,7 +24,7 @@ use overload (
     fallback => 1,
 );
 
-our $VERSION = 0.01;
+our $VERSION = '0.01';
 
 my $CONFIG;
 
@@ -562,7 +562,7 @@ around BUILDARGS => sub {
     my $opts;
     my @children;
     my $label;
-    for my $i (keys @args) {
+    for my $i (0..$#args) {
         # Label
         if (!ref $args[$i]) {
             croak 'ERROR: Label ('.($label // $args[$i]).') missing a segment'
