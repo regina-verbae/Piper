@@ -513,7 +513,7 @@ The first argument passed to a L</PROCESS HANDLER> is the L<Piper::Instance> obj
 
 In each of the below methods, the C<@items> are optional and only printed if the verbosity level for the segment S<< is > 1 >>.  They can be used to pass additional context or detail about the data being processed or which caused the message to print (for conditional messages).
 
-The built-in messaging only uses debug/verbosity levels S<1 and 2>, but there are no explicit rules enforced on maximum debug/verbosity levels, so users may explicity require higher levels for custom messages to heighten the required levels for any custom message.
+The built-in messaging only uses debug/verbosity levels S<1 and 2>, but there are no explicit rules enforced on maximum debug/verbosity levels, so users may explicitly require higher levels for custom messages to heighten the required levels for any custom message.
 
 =head3 ERROR($message, [@items])
 
