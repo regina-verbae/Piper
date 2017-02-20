@@ -19,6 +19,8 @@ use overload (
     fallback => 1,
 );
 
+our $VERSION = '0.01';
+
 =head1 SYNOPSIS
 
     use Piper::Path;

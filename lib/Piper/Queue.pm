@@ -16,6 +16,8 @@ use namespace::clean;
 
 with 'Piper::Role::Queue';
 
+our $VERSION = '0.01';
+
 =head1 SYNOPSIS
 
   use Piper::Queue;

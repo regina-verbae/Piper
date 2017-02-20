@@ -15,6 +15,8 @@ use Types::Common::String qw(NonEmptySimpleStr);
 
 use Moo::Role;
 
+our $VERSION = '0.01';
+
 =head1 DESCRIPTION
 
 This role contains attributes and methods that apply to each pipeline segment, both individual process handlers (L<Piper::Process>) and pipelines (L<Piper>).
@@ -144,7 +146,7 @@ has enabled => (
 
 =head2 id
 
-A globally uniq ID for the segment.  This is primarily useful for debugging only.
+A globally unique ID for the segment.  This is primarily useful for debugging only.
 
 =cut
 

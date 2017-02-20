@@ -16,6 +16,8 @@ use Moo;
 
 with qw(Piper::Role::Logger);
 
+our $VERSION = '0.01';
+
 =head1 DESCRIPTION
 
 The logging and debugging mechanism used by L<Piper>.

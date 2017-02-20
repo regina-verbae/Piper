@@ -25,6 +25,8 @@ use overload (
     fallback => 1,
 );
 
+our $VERSION = '0.01';
+
 =head1 DESCRIPTION
 
 The object representing an initialized pipeline segment in the L<Piper> system.
@@ -64,7 +66,7 @@ has children => (
 
 =head2 debug
 
-Debug level for this segment.  When accessing, inherits the debug level of any existing parent(s) if not explicitly set for this segment.  The default level is 0, but can be globally overriden with the environment variable C<PIPER_DEBUG>.
+Debug level for this segment.  When accessing, inherits the debug level of any existing parent(s) if not explicitly set for this segment.  The default level is 0, but can be globally overridden with the environment variable C<PIPER_DEBUG>.
 
 To clear a previously-set debug level for a segment, simply set it to C<undef> or use the C<clear_debug> method.
 
