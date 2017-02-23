@@ -139,6 +139,7 @@ Boolean indicating that the segment is enabled and can accept items for processi
 has enabled => (
     is => 'rw',
     isa => Bool,
+    coerce => sub { $_[0] ? 1 : 0 },
     required => 0,
     predicate => 1,
     clearer => 1,
