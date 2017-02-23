@@ -216,10 +216,6 @@ for my $test (
             $TEST->enabled(0);
             is($TEST->enabled, 0, 'writable');
 
-            throws_ok {
-                $TEST->enabled(-1)
-            } qr/did not pass type constraint "Bool"/, 'must be type Bool';
-
             $TEST->clear_enabled;
         };
 
