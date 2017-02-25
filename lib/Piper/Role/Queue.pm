@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Basic queue role used by Piper
+## ABSTRACT: Basic queue role used by the Piper system
 #####################################################################
 
 package Piper::Role::Queue;
@@ -15,9 +15,9 @@ our $VERSION = '0.02';
 
 =head1 DESCRIPTION
 
-A basic queue role for queues used throughout the L<Piper> system.
+=for stopwords dequeued queueing
 
-The role exists to support future subclassing of L<Piper> (and L<testing|/TESTING> such subclasses) with alternative queueing systems.
+The role exists to support future subclassing of L<Piper> (and L<testing|/TESTING> such subclasses) with alternate queueing systems.
 
 =head1 REQUIRES
 
@@ -65,8 +65,7 @@ requires 'requeue';
 
 =head1 TESTING
 
-Verify the functionality of a new queue class by downloading the L<Piper> tests and running the
-following:
+Verify the functionality of a new queue class by downloading the L<Piper> tests and running the following:
 
   PIPER_QUEUE_CLASS=<New queue class> prove t/01_Queue.t
 

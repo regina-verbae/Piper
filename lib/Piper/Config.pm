@@ -21,6 +21,8 @@ our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
+=for stopwords queueing
+
   # Defaults
   use Piper (
       batch_size   => 200,

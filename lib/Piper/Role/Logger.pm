@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Role for logging/messaging from Piper
+## ABSTRACT: Role for logging and debugging in the Piper system
 #####################################################################
 
 package Piper::Role::Logger;
@@ -20,8 +20,6 @@ our $VERSION = '0.02';
 
 =head1 DESCRIPTION
 
-Role for logging and debugging in the L<Piper> system.
-
 The role exists to support future subclassing and testing of the logging mechanism used by L<Piper>.
 
 =head1 REQUIRES
@@ -34,7 +32,7 @@ This role requires the definition of the below methods, each of which will be pr
 
 =head2 DEBUG
 
-This method is only called if S<<< C<< $self->debug_level($segment) > 0 >> >>>.
+This method is only called if the debug level of the segment is greater than zero.
 
 =cut
 
@@ -60,7 +58,7 @@ after ERROR => sub {
 
 =head2 INFO
 
-This method is only called if S<<< C<< $self->verbose_level($segment) > 0 >> >>> or S<<< C<< $self->debug_level($segment) > 0 >> >>>.
+This method is only called if either the verbosity or debug levels of the segment are greater than zero.
 
 =cut
 

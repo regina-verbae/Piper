@@ -20,6 +20,8 @@ our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
+=for stopwords dequeued
+
   use Piper::Queue;
 
   my $queue = Piper::Queue->new();
@@ -28,10 +30,6 @@ our $VERSION = '0.02';
   $queue->dequeue;       # 'x'
   $queue->requeue('x');
   $queue->dequeue;       # 'x'
-
-=head1 DESCRIPTION
-
-A simple queue.
 
 =head1 CONSTRUCTOR
 

@@ -38,6 +38,8 @@ sub import {
 
 =head1 SYNOPSIS
 
+=for stopwords clearers dataflow injectAfter iterable mentorship queueing
+
     use Piper;
 
     my $pipeline = Piper->new(
@@ -88,10 +90,7 @@ Processing segments are pluggable and reusable.
 
 Create a container pipeline segment (parent) from the provided child C<@segments>.
 
-Additionally, a single hashref of attributes for the container/parent segment may
-be included as an argument to the constructor (anywhere in the argument list).
-See the L</SEGMENT ATTRIBUTES> section for a description of attributes available for both parent
-and child segments.
+Additionally, a single hashref of attributes for the container/parent segment may be included as an argument to the constructor (anywhere in the argument list). See the L</SEGMENT ATTRIBUTES> section for a description of attributes available for both parent and child segments.
 
 Accepted segment types are as follows:
 
@@ -99,8 +98,7 @@ Accepted segment types are as follows:
 
 =item L<Piper> object
 
-Creates a sub-container of pipeline segments.  There is no (explicit) limit to the
-number of nested containers a pipeline may contain.
+Creates a sub-container of pipeline segments.  There is no (explicit) limit to the number of nested containers a pipeline may contain.
 
 =item L<Piper::Process|/PROCESS HANDLER> object
 
@@ -110,20 +108,17 @@ See the L</PROCESS HANDLER> section for a description of L<Piper::Process> objec
 
 =item A hashref that can be coerced into a L<Piper::Process> object.
 
-In order to be considered a candidate for coercion, the hashref must contain
-(at a minimum) the 'handler' key.
+In order to be considered a candidate for coercion, the hashref must contain (at a minimum) the 'handler' key.
 
 =item L<Piper::Instance|/INITIALIZATION> object
 
-In this case, the associated L<Piper> or L<Piper::Process> object is extracted from
-the L<Piper::Instance> object for use in the new pipeline segment.
+In this case, the associated L<Piper> or L<Piper::Process> object is extracted from the L<Piper::Instance> object for use in the new pipeline segment.
 
 See L</INITIALIZATION> for a description of L<Piper::Instance> objects.
 
 =item A C<< $label => $segment >> pair
 
-For such pairs, the C<$segment> can be any of the above segment types, and C<$label>
-is a simple scalar which will be used as C<$segment>'s label.
+For such pairs, the C<$segment> can be any of the above segment types, and C<$label> is a simple scalar which will be used as C<$segment>'s label.
 
 If the C<$segment> already has a label, C<$label> will override it.
 
@@ -158,29 +153,17 @@ If the C<$segment> already has a label, C<$label> will override it.
 
 =head1 INITIALIZATION
 
-Piper segments were designed to be easily reusable.  Prior to initialization,
-L<Piper> and L<Piper::Process> objects do not process data; they simply contain the
-blueprint for creating the pipeline.  As such, blueprints for commonly-used
-pipeline segments can be stored in package libraries and imported wherever
-needed.
+Piper segments were designed to be easily reusable.  Prior to initialization, L<Piper> and L<Piper::Process> objects do not process data; they simply contain the blueprint for creating the pipeline.  As such, blueprints for commonly-used pipeline segments can be stored in package libraries and imported wherever needed.
 
-To create a functioning pipeline from one such blueprint, simply call the
-C<init> method on the outermost segment.  The C<init> method returns a
-L<Piper::Instance> object of the outermost segment, which is the realization of the pipeline design, and which contains L<Piper::Instance> objects created from all its contained segments.
+To create a functioning pipeline from one such blueprint, simply call the C<init> method on the outermost segment.  The C<init> method returns a L<Piper::Instance> object of the outermost segment, which is the realization of the pipeline design, and which contains L<Piper::Instance> objects created from all its contained segments.
 
-Initialization fuses the pipeline segments together, establishes the
-relationships between the segments, and initializes the dataflow
-infrastructure.
+Initialization fuses the pipeline segments together, establishes the relationships between the segments, and initializes the dataflow infrastructure.
 
-The C<init> method may be chained from the constructor if the blueprint object is
-not needed:
+The C<init> method may be chained from the constructor if the blueprint object is not needed:
 
     my $instance = Piper->new(...)->init;
 
-Any arguments passed to the C<init> method will be cached and made available to
-each handler in the pipeline (see the L</PROCESS HANDLER> section for full
-description of handlers).  This is a great way to share a resource (such as a
-database handle) among process handlers.
+Any arguments passed to the C<init> method will be cached and made available to each handler in the pipeline (see the L</PROCESS HANDLER> section for full description of handlers).  This is a great way to share a resource (such as a database handle) among process handlers.
 
     my $pipe = Piper->new(
         query => sub {
@@ -241,17 +224,17 @@ Since L<Piper> has built-in support for non-linear and/or recursive pipelines, a
 
 The following methods may be called from the C<$instance> object passed as the first argument to a C<handler>:
 
-=head2 C<emit(@data)>
+=head2 emit(@data)
 
 Send C<@data> to the next segment in the pipeline.  If the instance is the last in the pipeline, emits to the drain, making the C<@data> ready for C<dequeue>.
 
-=head2 C<recycle(@data)>
+=head2 recycle(@data)
 
 Re-queue C<@data> to the top of the current segment in an order such that C<dequeue(1)> would subsequently return C<$data[0]> and so forth.
 
-=head2 C<injectAt($location, @data)>
+=head2 injectAt($location, @data)
 
-=head2 C<injectAfter($location, @data)>
+=head2 injectAfter($location, @data)
 
 Send C<@data> to the segment I<at> or I<after> the specified C<$location>.
 
@@ -281,11 +264,11 @@ For example, in the following pipeline, searching for C<processA> from the handl
         processA => sub { ... },
     );
 
-=head2 C<inject(@data)>
+=head2 inject(@data)
 
 Send C<@data> to the queue of the outermost segment.  Equivalent to C<injectAt('main', @data)> in the above example pipeline.
 
-=head2 C<eject(@data)>
+=head2 eject(@data)
 
 Send C<@data> to the drain of the outermost segment, making the C<@data> immediately ready for C<dequeue>.
 
@@ -305,12 +288,9 @@ All accessors, writers, predicates, and clearers are available for each segment 
 
 =head2 allow
 
-A coderef which can be used to subset the items which are I<allowed> to be
-processed by the segment.
+A coderef which can be used to subset the items which are I<allowed> to be processed by the segment.
 
-The coderef executes on each item attempting to queue to the segment.  If it
-returns true, the item is queued.  Otherwise, the item skips the segment and
-proceeds to the next adjacent segment.
+The coderef executes on each item attempting to queue to the segment.  If it returns true, the item is queued.  Otherwise, the item skips the segment and proceeds to the next adjacent segment.
 
 Each item is localized to C<$_>, and is also passed in as the first argument.
 
@@ -325,52 +305,37 @@ These example C<allow> subroutines are equivalent:
 
 The number of items to process at a time for the segment.
 
-Once initialized (see L</INITIALIZATION>), a segment inherits the C<batch_size>
-of any existing parent(s) if not provided.  If the segment has no parents, or
-if none of the parents have a C<batch_size> defined, the default C<batch_size> will
-be used.  The default C<batch_size> is 200, but can be configured in the import
-statement (see the L</GLOBAL CONFIGURATION> section).
+Once initialized (see L</INITIALIZATION>), a segment inherits the C<batch_size> of any existing parent(s) if not provided.  If the segment has no parents, or if none of the parents have a C<batch_size> defined, the default C<batch_size> will be used.  The default C<batch_size> is 200, but can be configured in the import statement (see the L</GLOBAL CONFIGURATION> section).
 
-=head2 debug*
+=head2 *debug
 
 The debug level for the segment.
 
-Once initialized (see L</INITIALIZATION>), a segment inherits the debug level of
-any existing parent(s) if not specified.  The default level is 0, but can be
-globally overridden by the environment variable C<PIPER_DEBUG>.
+Once initialized (see L</INITIALIZATION>), a segment inherits the debug level of any existing parent(s) if not specified.  The default level is 0, but can be globally overridden by the environment variable C<PIPER_DEBUG>.
 
-See the L</LOGGING AND DEBUGGING> section for specifics about debug and verbosity
-levels.
+See the L</LOGGING AND DEBUGGING> section for specifics about debug and verbosity levels.
 
-=head2 enabled*
+=head2 *enabled
 
-A boolean indicating that the segment is enabled and can accept items for
-processing.
+A boolean indicating that the segment is enabled and can accept items for processing.
 
-Once initialized (see L</INITIALIZATION>), a segment inherits this attribute from any
-existing parent(s).  The default is true.
+Once initialized (see L</INITIALIZATION>), a segment inherits this attribute from any existing parent(s).  The default is true.
 
-If a segment is disabled (C<enabled = 0>), all items attempting to queue to the segment are
-forwarded to the next adjacent segment.
+If a segment is disabled (C<enabled = 0>), all items attempting to queue to the segment are forwarded to the next adjacent segment.
 
 =head2 label
 
 A label for the segment.  If no label is provided, a globally unique ID will be used.
 
-Labels are necessary for certain types of L</FLOW CONTROL> (for example, L<injectAt>
-or L<injectAfter>).  For pipelines that do not utilize L</FLOW CONTROL> features,
-labels are primarily useful for L</LOGGING AND DEBUGGING>.
+Labels are necessary for certain types of L</FLOW CONTROL> (for example, L<injectAt> or L<injectAfter>).  For pipelines that do not utilize L</FLOW CONTROL> features, labels are primarily useful for L</LOGGING AND DEBUGGING>.
 
-=head2 verbose*
+=head2 *verbose
 
 The verbosity level for the segment.
 
-Once initialized (see L</INITIALIZATION>), a segment inherits the verbosity level
-of any existing parent(s) if not specified.  The default level is 0, but can be
-globally overridden by the environment variable C<PIPER_VERBOSE>.
+Once initialized (see L</INITIALIZATION>), a segment inherits the verbosity level of any existing parent(s) if not specified.  The default level is 0, but can be globally overridden by the environment variable C<PIPER_VERBOSE>.
 
-See the L</LOGGING AND DEBUGGING> section for specifics about debug and verbosity
-levels.
+See the L</LOGGING AND DEBUGGING> section for specifics about debug and verbosity levels.
 
 =head2 INSTANCE ATTRIBUTES
 
@@ -442,8 +407,7 @@ Returns the number of items that have finished processing and are ready for C<de
 
 =head1 GLOBAL CONFIGURATION
 
-The following global attributes are configurable from the Piper
-import statement.
+The following global attributes are configurable from the Piper import statement.
 
     Ex:
     # Change the default batch_size to 50
@@ -451,8 +415,7 @@ import statement.
 
 =head2 batch_size
 
-The default batch size used by pipeline segments which do not have a locally
-defined C<batch_size> and do not have a parent segment with a defined C<batch_size>.
+The default batch size used by pipeline segments which do not have a locally defined C<batch_size> and do not have a parent segment with a defined C<batch_size>.
 
 The C<batch_size> attribute must be a positive integer.
 
@@ -542,7 +505,8 @@ Prints a debug C<$message> to STDERR if the debug level for the segment S<< is >
                 }
             }
             # User-heightened verbosity level
-            $instance->INFO("Data all good!", @$batch) if $instance->verbose > 2;
+            $instance->INFO("Data all good!", @$batch)
+                if $instance->verbose > 2;
             ...
         },
         ...

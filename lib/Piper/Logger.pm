@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: Log/message handler for Piper
+## ABSTRACT: Logging and debugging message handler for Piper
 #####################################################################
 
 package Piper::Logger;
@@ -17,10 +17,6 @@ use Moo;
 with qw(Piper::Role::Logger);
 
 our $VERSION = '0.02';
-
-=head1 DESCRIPTION
-
-The logging and debugging mechanism used by L<Piper>.
 
 =head1 CONSTRUCTOR
 
@@ -62,8 +58,7 @@ sub ERROR {
 
 =head2 INFO($segment, $message, @items)
 
-This method is a no-op unless S<<< C<< $self->verbose_level($segment) > 0 >> >>> or
-S<<< C<< $self->debug_level($segment) > 0 >> >>>.
+This method is a no-op unless S<<< C<< $self->verbose_level($segment) > 0 >> >>> or S<<< C<< $self->debug_level($segment) > 0 >> >>>.
 
 Prints an informational message to STDERR.
 
@@ -105,9 +100,9 @@ There are two-three parts to the message:
 
 The message part is simply C<$message> for all debug/verbose levels.
 
-The <items> part is only included when S<<< C<< $self->verbose_level($segment) > 1 >> >>>.  It is created by C<Data::Dump::dump(@items)>.
+The <items> part is only included when the verbosity level of the segment is greater than 1.  It is formatted by L<Data::Dump>.
 
-If the verbosity and debug levels are both 0, segment_name is simply the segment's C<label>.  If S<<< C<< $self->verbose_level($segment) > 0 >> >>>, the full path of C<$segment> is used instead of C<label>.  If S<<< C<< $self->debug_level($segment) > 1 >> >>>, the segment's C<id> is appended to C<label>/C<path> in parentheses.
+If the verbosity and debug levels are both 0, segment_name is simply the segment's C<label>.  If the verbosity level of the segment is greater than zero, the full path of the segment is used instead of C<label>.  If the debug level of the segment is greater than 1, the segment's C<id> is appended to C<label>/C<path> in parentheses.
 
 =cut
 

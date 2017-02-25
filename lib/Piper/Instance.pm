@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: An initialized pipeline segment for Piper
+## ABSTRACT: An initialized pipeline segment for the Piper system
 #####################################################################
 
 package Piper::Instance;
@@ -26,10 +26,6 @@ use overload (
 );
 
 our $VERSION = '0.02';
-
-=head1 DESCRIPTION
-
-The object representing an initialized pipeline segment in the L<Piper> system.
 
 =head1 ATTRIBUTES
 

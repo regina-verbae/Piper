@@ -1,6 +1,6 @@
 #####################################################################
 ## AUTHOR: Mary Ehlers, regina.verbae@gmail.com
-## ABSTRACT: A data-processing unit for a Piper pipeline
+## ABSTRACT: A data-processing unit for the Piper pipeline system
 #####################################################################
 
 package Piper::Process;
@@ -34,10 +34,6 @@ sub import {
     }
     return 1;
 }
-
-=head1 DESCRIPTION
-
-A single data-processing segment for the L<Piper> pipeline system.
 
 =head1 CONSTRUCTOR
 
