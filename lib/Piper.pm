@@ -266,11 +266,11 @@ For example, in the following pipeline, searching for C<processA> from the handl
 
 =head2 inject(@data)
 
-Send C<@data> to the queue of the outermost segment.  Equivalent to C<injectAt('main', @data)> in the above example pipeline.
+If the segment has a parent, enqueues C<@data> to its parent.  Otherwise, enqueues C<@data> to itself.
 
 =head2 eject(@data)
 
-Send C<@data> to the drain of the outermost segment, making the C<@data> immediately ready for C<dequeue>.
+If the segment has a parent, send C<@data> to the drain of its parent.  Otherwise, enqueues C<@data> to the segment's drain.
 
 =head1 SEGMENT ATTRIBUTES
 

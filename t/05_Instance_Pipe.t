@@ -779,6 +779,93 @@ subtest "$APP - nested pipes" => sub {
             [ 4..5 ],
             'items dequeued, only processed by first grandchild'
         );
+
+        $GRAND2->enabled(1);
+    };
+
+    state $passthrough = sub {
+        my ($instance, $batch) = @_;
+        $instance->emit(@$batch);
+    };
+
+    my $FLOWTEST = Piper->new(
+        { label => 'main', batch_size => 2 },
+        parent => Piper->new(
+            first_born => $passthrough,
+            middle => $passthrough,
+            baby => $passthrough,
+        ),
+        neighbor => $passthrough,
+    )->init();
+
+    my ($PARENT, $NEIGHBOR) = @{$FLOWTEST->children};
+    my ($FIRST, $MIDDLE, $BABY) = @{$PARENT->children};
+    
+    subtest "$APP - eject" => sub {
+        $FIRST->eject(qw(1 2));
+        use DDP; p $PARENT->drain;
+        is_deeply(
+            [ $PARENT->drain->pending,
+                do { $FLOWTEST->process_batch; $FLOWTEST->dequeue(2) }
+            ],
+            [ 2, 1, 2 ],
+            'ejected to drain of parent from first child'
+        );
+        $MIDDLE->eject(qw(1 2));
+        is_deeply(
+            [ $PARENT->drain->pending,
+                do { $FLOWTEST->process_batch; $FLOWTEST->dequeue(2) }
+            ],
+            [ 2, 1, 2 ],
+            'ejected to drain of parent from middle child'
+        );
+        $BABY->eject(qw(1 2));
+        is_deeply(
+            [ $PARENT->drain->pending,
+                do { $FLOWTEST->process_batch; $FLOWTEST->dequeue(2) }
+            ],
+            [ 2, 1, 2 ],
+            'ejected to drain of parent from last child'
+        );
+    };
+
+    subtest "$APP - recycle" => sub {
+        $FIRST->enqueue(qw(1 2 3));
+        $FIRST->recycle(qw(4 5));
+        is($FIRST->pending, 5, 'proper number of elements pending');
+        $FLOWTEST->prepare(5);
+        is_deeply(
+            [ $FLOWTEST->dequeue(5) ],
+            [qw(4 5 1 2 3)],
+            'recycle ordered as expected'
+        );
+    };
+
+    subtest "$APP - inject" => sub {
+        $FIRST->inject(qw(1 2));
+        is_deeply(
+            [ $PARENT->pending,
+                do { $FLOWTEST->prepare(2); $FLOWTEST->dequeue(2) }
+            ],
+            [ 2, 1, 2 ],
+            'injected to parent from first child'
+        );
+        $MIDDLE->inject(qw(1 2));
+        is_deeply(
+            [ $PARENT->pending,
+                do { $FLOWTEST->prepare(2); $FLOWTEST->dequeue(2) }
+            ],
+            [ 2, 1, 2 ],
+            'injected to parent from middle child'
+        );
+        $BABY->inject(qw(1 2));
+        is_deeply(
+            [ $PARENT->pending,
+                do { $FLOWTEST->prepare(2); $FLOWTEST->dequeue(2) }
+            ],
+            [ 2, 1, 2 ],
+            'injected to parent from last child'
+        );
     };
 };
 

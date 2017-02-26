@@ -383,14 +383,20 @@ These methods are available for use within process handler subroutines (see L<Pi
 
 =head2 eject(@data)
 
-Send C<@data> to the drain of the outermost segment, making the C<@data> immediately ready for C<dequeue>.
+If the segment has a parent, send C<@data> to the drain of its parent.  Otherwise, enqueues C<@data> to the segment's drain.
 
 =cut
 
 sub eject {
     my $self = shift;
-    $self->INFO("Ejecting to drain", @_);
-    $self->main->drain->enqueue(@_);
+    if ($self->has_parent) {
+        $self->INFO('Ejecting to drain of parent ('.$self->parent.')', @_);
+        $self->parent->drain->enqueue(@_);
+    }
+    else {
+        $self->INFO('Ejecting to drain', @_);
+        $self->drain->enqueue(@_);
+    }
 }
 
 =head2 emit(@data)
@@ -408,14 +414,21 @@ sub emit {
 
 =head2 inject(@data)
 
-Send C<@data> to the queue of the outermost segment.
+If the segment has a parent, enqueues C<@data> to its parent.  Otherwise, enqueues <@data> to itself.
 
 =cut
 
 sub inject {
     my $self = shift;
-    $self->INFO('Injecting to '.$self->main, @_);
-    $self->main->enqueue(@_);
+
+    if ($self->has_parent) {
+        $self->INFO('Injecting to parent ('.$self->parent.')', @_);
+        $self->parent->enqueue(@_);
+    }
+    else {
+        $self->INFO('Injecting to self ('.$self.')', @_);
+        $self->enqueue(@_);
+    }
 }
 
 =head2 injectAfter($location, @data)
