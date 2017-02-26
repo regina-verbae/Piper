@@ -318,6 +318,20 @@ sub find_segment {
     return $cache->{$location};
 }
 
+=head2 *flush
+
+Process batches until there are no more items pending.
+
+=cut
+
+sub flush {
+    my ($self) = @_;
+
+    while ($self->has_pending) {
+        $self->process_batch;
+    }
+}
+
 =head2 *is_exhausted
 
 Returns a boolean indicating whether there are any items left to process or dequeue.

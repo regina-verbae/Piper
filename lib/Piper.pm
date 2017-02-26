@@ -373,6 +373,10 @@ Queue C<@data> for processing by the pipeline.
 
 Find and return the segment instance according to C<$location>, which can be a label or a path-like hierarchy of labels.  See L<injectAfter|/injectAfter($location, @data)> for a detailed description of C<$location>.
 
+=head3 *flush
+
+Process batches until there are no more items pending.
+
 =head3 has_children
 
 A boolean indicating whether the instance has any children.

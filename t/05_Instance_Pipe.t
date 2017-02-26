@@ -868,6 +868,24 @@ subtest "$APP - nested pipes" => sub {
             'injected to parent from last child'
         );
     };
+
+    subtest "$APP - flush" => sub {
+        my @exp = (qw(1 2 3)) x 2;
+
+        for my $seg ($FLOWTEST, $PARENT, $NEIGHBOR, $FIRST, $MIDDLE, $BABY) {
+            $seg->enqueue(@exp);
+        }
+
+        is($FLOWTEST->pending, 6 * @exp, 'pending expected amount');
+        $FLOWTEST->flush;
+        ok(!$FLOWTEST->has_pending, 'no more pending after flush');
+        is($FLOWTEST->ready, 6 * @exp, 'expected amount ready');
+        is_deeply(
+            [ $FLOWTEST->dequeue($FLOWTEST->ready) ],
+            [ (@exp) x 6 ],
+            'flush was successful'
+        );
+    };
 };
 
 #####################################################################

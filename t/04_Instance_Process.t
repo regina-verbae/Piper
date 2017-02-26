@@ -308,6 +308,32 @@ my $TEST = Piper::Process->new(half => {
     };
 }
 
+# Test flush
+{
+    subtest "$APP - flush" => sub {
+        my $FLUSHER = Piper::Process->new(
+            flusher => {
+                batch_size => 2,
+                handler => sub {
+                    my ($instance, $batch) = @_;
+                    $instance->emit(@$batch);
+                },
+            }
+        )->init();
+
+        my @exp = (qw(1 2 3)) x 5;
+        $FLUSHER->enqueue(@exp);
+        is($FLUSHER->pending, 15, 'enqueued expected amount');
+        $FLUSHER->flush;
+        ok(!$FLUSHER->has_pending, 'no more pending after flush');
+        is_deeply(
+            [ $FLUSHER->dequeue($FLUSHER->ready) ],
+            \@exp,
+            'flush was successful'
+        );
+    };
+}
+
 #####################################################################
 
 done_testing();
