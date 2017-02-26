@@ -65,10 +65,10 @@ The constructor accepts the following patterns for C<@args>:
 around BUILDARGS => sub {
     my ($orig, $self, @args) = @_;
 
-    croak "ERROR: Too many arguments to constructor of ".__PACKAGE__
+    croak 'ERROR: Too many arguments to constructor of '.__PACKAGE__
         if @args > 2;
 
-    croak "ERROR: Last argument must be a CODE ref or HASH ref"
+    croak 'ERROR: Last argument must be a CODE ref or HASH ref'
         unless (ref $args[-1] eq 'CODE') or (ref $args[-1] eq 'HASH');
 
     my %hash;
@@ -80,7 +80,7 @@ around BUILDARGS => sub {
     }
 
     if (@args) {
-        croak "ERROR: Labels may not be a reference" if ref $args[0];
+        croak 'ERROR: Labels may not be a reference' if ref $args[0];
         $hash{label} = shift @args;
     }
 

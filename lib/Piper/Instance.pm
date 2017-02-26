@@ -216,7 +216,7 @@ around enqueue => sub {
 
     if (!$self->enabled) {
         # Bypass - go straight to drain
-        $self->INFO("Skipping disabled process", @args);
+        $self->INFO('Skipping disabled process', @args);
         $self->drain->enqueue(@args);
         return;
     }
@@ -230,7 +230,7 @@ around enqueue => sub {
         @items = @$queue if defined $queue;
 
         if (defined $skip) {
-            $self->INFO("Disallowed items emitted to next handler", @$skip);
+            $self->INFO('Disallowed items emitted to next handler', @$skip);
             $self->drain->enqueue(@$skip);
         }
     }
@@ -240,7 +240,7 @@ around enqueue => sub {
 
     return unless @items;
 
-    $self->INFO("Queueing items", @items);
+    $self->INFO('Queueing items', @items);
     $self->$orig(@items);
 };
 
@@ -407,7 +407,7 @@ Send C<@data> to the next segment in the pipeline.  If the segment is the last i
 
 sub emit {
     my $self = shift;
-    $self->INFO("Emitting", @_);
+    $self->INFO('Emitting', @_);
     # Just collect in the drain
     $self->drain->enqueue(@_);
 }
@@ -471,7 +471,7 @@ Re-queue C<@data> to the top of the current segment in an order such that C<dequ
 
 sub recycle {
     my $self = shift;
-    $self->INFO("Recycling", @_);
+    $self->INFO('Recycling', @_);
     $self->requeue(@_);
 }
 
@@ -677,7 +677,7 @@ sub descendant {
     $referrer //= '';
 
     $self->DEBUG("Searching for location '$path'");
-    $self->DEBUG("Referrer", $referrer) if $referrer;
+    $self->DEBUG('Referrer', $referrer) if $referrer;
 
     # Search immediate children
     $path = Piper::Path->new($path) if $path and not ref $path;
@@ -722,7 +722,7 @@ sub descendant {
         my $overlap = $self->label;
         if ($path =~ m{^\Q$overlap\E(?:$|/(?<path>.*))}) {
             $path = $+{path} // '';
-            $self->DEBUG("Overlapping descendant search", $path ? $path : ());
+            $self->DEBUG('Overlapping descendant search', $path ? $path : ());
             $descend = $path ? $self->descendant($path, $self) : $self;
         }
     }
@@ -772,10 +772,10 @@ sub process_batch {
     }
     else {
         my $num = $self->batch_size;
-        $self->DEBUG("Processing batch with max size", $num);
+        $self->DEBUG('Processing batch with max size', $num);
 
         my @batch = $self->queue->dequeue($num);
-        $self->INFO("Processing batch", @batch);
+        $self->INFO('Processing batch', @batch);
 
         $self->segment->handler->(
             $self,

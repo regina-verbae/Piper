@@ -505,7 +505,7 @@ Prints a debug C<$message> to STDERR if the debug level for the segment S<< is >
                 }
             }
             # User-heightened verbosity level
-            $instance->INFO("Data all good!", @$batch)
+            $instance->INFO('Data all good!', @$batch)
                 if $instance->verbose > 2;
             ...
         },

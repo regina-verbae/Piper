@@ -53,7 +53,7 @@ This method should cause a C<die> or C<croak>.  It will do so automatically if n
 requires 'ERROR';
 
 after ERROR => sub {
-    croak "ERROR encountered";
+    croak 'ERROR encountered';
 };
 
 =head2 INFO
