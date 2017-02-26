@@ -9,7 +9,7 @@ use v5.10;
 use strict;
 use warnings;
 
-use List::AllUtils qw(last_value max part sum);
+use List::AllUtils qw(any last_value max part sum);
 use List::UtilsBy qw(max_by min_by);
 use Piper::Path;
 use Scalar::Util qw(weaken);
@@ -201,6 +201,20 @@ A boolean indicating whether the instance has any children (contained instances)
 
 A boolean indicating whether the instance has a parent (container instance).  Will be true for all segments except the outermost segment (C<main>).
 
+=head2 has_pending
+
+Returns a boolean indicating whether there are any items that are queued at some level of the segment but have not completed processing.
+
+=cut
+
+sub has_pending {
+    my ($self) = @_;
+
+    return $self->has_children
+        ? any { $_->has_pending } @{$self->children}
+        : $self->queue->ready;
+}
+
 =head2 *dequeue([$num])
 
 Remove at most C<$num> S<(default 1)> processed items from the end of the segment.
@@ -365,7 +379,7 @@ sub prepare {
     my ($self, $num) = @_;
     $num //= 1;
 
-    while ($self->pending and $self->ready < $num) {
+    while ($self->has_pending and $self->ready < $num) {
         $self->process_batch;
     }
     return $self->ready;

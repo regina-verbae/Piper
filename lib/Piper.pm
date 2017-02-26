@@ -381,6 +381,10 @@ A boolean indicating whether the instance has any children.
 
 A boolean indicating whether the instance has a parent.
 
+=head3 has_pending
+
+Returns a boolean indicating whether there are any items that are queued at some level of the segment but have not completed processing.
+
 =head3 *is_exhausted
 
 Returns a boolean indicating whether there are any items left to process or dequeue.

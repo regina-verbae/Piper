@@ -276,6 +276,7 @@ use Piper;
 
         # Test queueing
         subtest "$APP - queueing" => sub {
+            ok(!$SMALL->has_pending, '!has_pending');
             ok(!$SMALL->pending, 'not yet pending');
             ok(!$SMALL->ready, 'not yet ready');
             is($SMALL->pressure, 0, 'no pressure');
@@ -283,6 +284,7 @@ use Piper;
             my @data = (1..3);
             $SMALL->enqueue(map { $_ * 2 } @data);
 
+            ok($SMALL->has_pending, 'has_pending');
             is($SMALL->pending, 3, 'pending items');
             ok(!$SMALL->ready, 'still no ready');
             is($SMALL->pressure, 150, 'positive pressure');
@@ -297,7 +299,7 @@ use Piper;
 
             $SMALL->process_batch;
 
-            is($SMALL->pending, 0, 'removed un-full batch from pending queue');
+            ok(!$SMALL->has_pending, 'removed un-full batch from pending queue');
             is($SMALL->ready, 3, 'un-full batch processed successfully');
         };
 
@@ -365,7 +367,7 @@ use Piper;
             is($CHILD->enabled, 0, 'child inherits disable from parent');
 
             $SMALL->enqueue(1..3);
-            is($SMALL->pending, 0, 'nothing pending in disabled pipe');
+            ok(!$SMALL->has_pending, 'nothing pending in disabled pipe');
             is($SMALL->ready, 3, 'items skipped disabled pipe');
 
             is_deeply(
@@ -380,7 +382,7 @@ use Piper;
             is($CHILD->enabled, 0, 'child disabled');
 
             $SMALL->enqueue(1..3);
-            is($SMALL->pending, 0, 'nothing pending in pipe with 1 non-enabled child');
+            ok(!$SMALL->has_pending, 'nothing pending in pipe with 1 non-enabled child');
             is($SMALL->ready, 3, 'items skipped 1 non-enabled child');
 
             is_deeply(
@@ -643,7 +645,7 @@ subtest "$APP - nested pipes" => sub {
 
     # Test queueing
     subtest "$APP - queueing" => sub {
-        ok(!$TEST->pending, 'not yet pending');
+        ok(!$TEST->has_pending, 'not yet pending');
         ok(!$TEST->ready, 'not yet ready');
         is($TEST->pressure, 0, 'no pressure');
 
@@ -667,12 +669,12 @@ subtest "$APP - nested pipes" => sub {
 
 
         $TEST->process_batch;
-        is($GRAND1->pending, 0, 'finished processing first grandchild');
+        ok(!$GRAND1->has_pending, 'finished processing first grandchild');
         is($GRAND2->pending + $GRAND2->ready, 5, 'next grandchild waiting');
 
 
         $TEST->process_batch;
-        is($GRAND2->pending, 0, 'processed next grandchild');
+        ok(!$GRAND2->has_pending, 'processed next grandchild');
         is($TEST->ready, 5, 'all done processing');
     };
 
@@ -742,7 +744,7 @@ subtest "$APP - nested pipes" => sub {
         ok(!$GRAND2->enabled, 'grandchild inherits disable from grandparent');
 
         $TEST->enqueue(1..3);
-        ok(!$TEST->pending, 'nothing pending in disabled pipe');
+        ok(!$TEST->has_pending, 'nothing pending in disabled pipe');
         is($TEST->ready, 3, 'items skipped disabled pipe');
 
         is_deeply(
@@ -757,7 +759,7 @@ subtest "$APP - nested pipes" => sub {
         ok(!$GRAND1->enabled, 'grandchild inherits disable from child');
 
         $TEST->enqueue(1..3);
-        ok(!$TEST->pending, 'nothing pending in pipe with 1 non-enabled child');
+        ok(!$TEST->has_pending, 'nothing pending in pipe with 1 non-enabled child');
         is_deeply(
             [ $TEST->dequeue(3) ],
             [ 1..3 ],
@@ -771,7 +773,7 @@ subtest "$APP - nested pipes" => sub {
         ok($GRAND1->enabled, 'sibling does not inherit disable');
 
         $TEST->enqueue(1..2);
-        ok($TEST->pending, 'pending with one enabled grandchild');
+        ok($TEST->has_pending, 'pending with one enabled grandchild');
         $TEST->process_batch;
         is($TEST->ready, 2, 'items only went through one grandchild');
         is_deeply(
@@ -803,7 +805,6 @@ subtest "$APP - nested pipes" => sub {
     
     subtest "$APP - eject" => sub {
         $FIRST->eject(qw(1 2));
-        use DDP; p $PARENT->drain;
         is_deeply(
             [ $PARENT->drain->pending,
                 do { $FLOWTEST->process_batch; $FLOWTEST->dequeue(2) }
