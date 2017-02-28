@@ -526,6 +526,10 @@ Much of the concept and API for this project was inspired by the work of L<Natha
 
 Special thanks to L<Tim Heaney|http://oylenshpeegul.typepad.com> for his encouragement and mentorship.
 
+=head1 LICENSE
+
+License granted as per L<Apache 2.0|http://apache.org/licenses/LICENSE-2.0>.
+
 =cut
 
 around BUILDARGS => sub {
