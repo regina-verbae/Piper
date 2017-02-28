@@ -1,3 +1,7 @@
+# NAME
+
+Piper - Flexible, iterable pipeline engine with automatic batching
+
 # SYNOPSIS
 
     use Piper;
@@ -35,17 +39,13 @@ The software engineering concept known as a pipeline is a chain of processing se
 
 Create a container pipeline segment (parent) from the provided child `@segments`.
 
-Additionally, a single hashref of attributes for the container/parent segment may
-be included as an argument to the constructor (anywhere in the argument list).
-See the ["SEGMENT ATTRIBUTES"](#segment-attributes) section for a description of attributes available for both parent
-and child segments.
+Additionally, a single hashref of attributes for the container/parent segment may be included as an argument to the constructor (anywhere in the argument list). See the ["SEGMENT ATTRIBUTES"](#segment-attributes) section for a description of attributes available for both parent and child segments.
 
 Accepted segment types are as follows:
 
 - [Piper](https://metacpan.org/pod/Piper) object
 
-    Creates a sub-container of pipeline segments.  There is no (explicit) limit to the
-    number of nested containers a pipeline may contain.
+    Creates a sub-container of pipeline segments.  There is no (explicit) limit to the number of nested containers a pipeline may contain.
 
 - [Piper::Process](#process-handler) object
 
@@ -54,20 +54,17 @@ Accepted segment types are as follows:
 - A coderef (which will be coerced into a [Piper::Process](https://metacpan.org/pod/Piper::Process) object).
 - A hashref that can be coerced into a [Piper::Process](https://metacpan.org/pod/Piper::Process) object.
 
-    In order to be considered a candidate for coercion, the hashref must contain
-    (at a minimum) the 'handler' key.
+    In order to be considered a candidate for coercion, the hashref must contain (at a minimum) the 'handler' key.
 
 - [Piper::Instance](#initialization) object
 
-    In this case, the associated [Piper](https://metacpan.org/pod/Piper) or [Piper::Process](https://metacpan.org/pod/Piper::Process) object is extracted from
-    the [Piper::Instance](https://metacpan.org/pod/Piper::Instance) object for use in the new pipeline segment.
+    In this case, the associated [Piper](https://metacpan.org/pod/Piper) or [Piper::Process](https://metacpan.org/pod/Piper::Process) object is extracted from the [Piper::Instance](https://metacpan.org/pod/Piper::Instance) object for use in the new pipeline segment.
 
     See ["INITIALIZATION"](#initialization) for a description of [Piper::Instance](https://metacpan.org/pod/Piper::Instance) objects.
 
 - A `$label => $segment` pair
 
-    For such pairs, the `$segment` can be any of the above segment types, and `$label`
-    is a simple scalar which will be used as `$segment`'s label.
+    For such pairs, the `$segment` can be any of the above segment types, and `$label` is a simple scalar which will be used as `$segment`'s label.
 
     If the `$segment` already has a label, `$label` will override it.
 
@@ -100,29 +97,17 @@ Accepted segment types are as follows:
 
 # INITIALIZATION
 
-Piper segments were designed to be easily reusable.  Prior to initialization,
-[Piper](https://metacpan.org/pod/Piper) and [Piper::Process](https://metacpan.org/pod/Piper::Process) objects do not process data; they simply contain the
-blueprint for creating the pipeline.  As such, blueprints for commonly-used
-pipeline segments can be stored in package libraries and imported wherever
-needed.
+Piper segments were designed to be easily reusable.  Prior to initialization, [Piper](https://metacpan.org/pod/Piper) and [Piper::Process](https://metacpan.org/pod/Piper::Process) objects do not process data; they simply contain the blueprint for creating the pipeline.  As such, blueprints for commonly-used pipeline segments can be stored in package libraries and imported wherever needed.
 
-To create a functioning pipeline from one such blueprint, simply call the
-`init` method on the outermost segment.  The `init` method returns a
-[Piper::Instance](https://metacpan.org/pod/Piper::Instance) object of the outermost segment, which is the realization of the pipeline design, and which contains [Piper::Instance](https://metacpan.org/pod/Piper::Instance) objects created from all its contained segments.
+To create a functioning pipeline from one such blueprint, simply call the `init` method on the outermost segment.  The `init` method returns a [Piper::Instance](https://metacpan.org/pod/Piper::Instance) object of the outermost segment, which is the realization of the pipeline design, and which contains [Piper::Instance](https://metacpan.org/pod/Piper::Instance) objects created from all its contained segments.
 
-Initialization fuses the pipeline segments together, establishes the
-relationships between the segments, and initializes the dataflow
-infrastructure.
+Initialization fuses the pipeline segments together, establishes the relationships between the segments, and initializes the dataflow infrastructure.
 
-The `init` method may be chained from the constructor if the blueprint object is
-not needed:
+The `init` method may be chained from the constructor if the blueprint object is not needed:
 
     my $instance = Piper->new(...)->init;
 
-Any arguments passed to the `init` method will be cached and made available to
-each handler in the pipeline (see the ["PROCESS HANDLER"](#process-handler) section for full
-description of handlers).  This is a great way to share a resource (such as a
-database handle) among process handlers.
+Any arguments passed to the `init` method will be cached and made available to each handler in the pipeline (see the ["PROCESS HANDLER"](#process-handler) section for full description of handlers).  This is a great way to share a resource (such as a database handle) among process handlers.
 
     my $pipe = Piper->new(
         query => sub {
@@ -179,17 +164,17 @@ Since [Piper](https://metacpan.org/pod/Piper) has built-in support for non-linea
 
 The following methods may be called from the `$instance` object passed as the first argument to a `handler`:
 
-## `emit(@data)`
+## emit(@data)
 
 Send `@data` to the next segment in the pipeline.  If the instance is the last in the pipeline, emits to the drain, making the `@data` ready for `dequeue`.
 
-## `recycle(@data)`
+## recycle(@data)
 
 Re-queue `@data` to the top of the current segment in an order such that `dequeue(1)` would subsequently return `$data[0]` and so forth.
 
-## `injectAt($location, @data)`
+## injectAt($location, @data)
 
-## `injectAfter($location, @data)`
+## injectAfter($location, @data)
 
 Send `@data` to the segment _at_ or _after_ the specified `$location`.
 
@@ -219,13 +204,13 @@ For example, in the following pipeline, searching for `processA` from the handle
         processA => sub { ... },
     );
 
-## `inject(@data)`
+## inject(@data)
 
-Send `@data` to the queue of the outermost segment.  Equivalent to `injectAt('main', @data)` in the above example pipeline.
+If the segment has a parent, enqueues `@data` to its parent.  Otherwise, enqueues `@data` to itself.
 
-## `eject(@data)`
+## eject(@data)
 
-Send `@data` to the drain of the outermost segment, making the `@data` immediately ready for `dequeue`.
+If the segment has a parent, send `@data` to the drain of its parent.  Otherwise, enqueues `@data` to the segment's drain.
 
 # SEGMENT ATTRIBUTES
 
@@ -243,12 +228,9 @@ All accessors, writers, predicates, and clearers are available for each segment 
 
 ## allow
 
-A coderef which can be used to subset the items which are _allowed_ to be
-processed by the segment.
+A coderef which can be used to subset the items which are _allowed_ to be processed by the segment.
 
-The coderef executes on each item attempting to queue to the segment.  If it
-returns true, the item is queued.  Otherwise, the item skips the segment and
-proceeds to the next adjacent segment.
+The coderef executes on each item attempting to queue to the segment.  If it returns true, the item is queued.  Otherwise, the item skips the segment and proceeds to the next adjacent segment.
 
 Each item is localized to `$_`, and is also passed in as the first argument.
 
@@ -263,52 +245,37 @@ These example `allow` subroutines are equivalent:
 
 The number of items to process at a time for the segment.
 
-Once initialized (see ["INITIALIZATION"](#initialization)), a segment inherits the `batch_size`
-of any existing parent(s) if not provided.  If the segment has no parents, or
-if none of the parents have a `batch_size` defined, the default `batch_size` will
-be used.  The default `batch_size` is 200, but can be configured in the import
-statement (see the ["GLOBAL CONFIGURATION"](#global-configuration) section).
+Once initialized (see ["INITIALIZATION"](#initialization)), a segment inherits the `batch_size` of any existing parent(s) if not provided.  If the segment has no parents, or if none of the parents have a `batch_size` defined, the default `batch_size` will be used.  The default `batch_size` is 200, but can be configured in the import statement (see the ["GLOBAL CONFIGURATION"](#global-configuration) section).
 
-## debug\*
+## \*debug
 
 The debug level for the segment.
 
-Once initialized (see ["INITIALIZATION"](#initialization)), a segment inherits the debug level of
-any existing parent(s) if not specified.  The default level is 0, but can be
-globally overridden by the environment variable `PIPER_DEBUG`.
+Once initialized (see ["INITIALIZATION"](#initialization)), a segment inherits the debug level of any existing parent(s) if not specified.  The default level is 0, but can be globally overridden by the environment variable `PIPER_DEBUG`.
 
-See the ["LOGGING AND DEBUGGING"](#logging-and-debugging) section for specifics about debug and verbosity
-levels.
+See the ["LOGGING AND DEBUGGING"](#logging-and-debugging) section for specifics about debug and verbosity levels.
 
-## enabled\*
+## \*enabled
 
-A boolean indicating that the segment is enabled and can accept items for
-processing.
+A boolean indicating that the segment is enabled and can accept items for processing.
 
-Once initialized (see ["INITIALIZATION"](#initialization)), a segment inherits this attribute from any
-existing parent(s).  The default is true.
+Once initialized (see ["INITIALIZATION"](#initialization)), a segment inherits this attribute from any existing parent(s).  The default is true.
 
-If a segment is disabled (`enabled = 0`), all items attempting to queue to the segment are
-forwarded to the next adjacent segment.
+If a segment is disabled (`enabled = 0`), all items attempting to queue to the segment are forwarded to the next adjacent segment.
 
 ## label
 
 A label for the segment.  If no label is provided, a globally unique ID will be used.
 
-Labels are necessary for certain types of ["FLOW CONTROL"](#flow-control) (for example, [injectAt](https://metacpan.org/pod/injectAt)
-or [injectAfter](https://metacpan.org/pod/injectAfter)).  For pipelines that do not utilize ["FLOW CONTROL"](#flow-control) features,
-labels are primarily useful for ["LOGGING AND DEBUGGING"](#logging-and-debugging).
+Labels are necessary for certain types of ["FLOW CONTROL"](#flow-control) (for example, [injectAt](https://metacpan.org/pod/injectAt) or [injectAfter](https://metacpan.org/pod/injectAfter)).  For pipelines that do not utilize ["FLOW CONTROL"](#flow-control) features, labels are primarily useful for ["LOGGING AND DEBUGGING"](#logging-and-debugging).
 
-## verbose\*
+## \*verbose
 
 The verbosity level for the segment.
 
-Once initialized (see ["INITIALIZATION"](#initialization)), a segment inherits the verbosity level
-of any existing parent(s) if not specified.  The default level is 0, but can be
-globally overridden by the environment variable `PIPER_VERBOSE`.
+Once initialized (see ["INITIALIZATION"](#initialization)), a segment inherits the verbosity level of any existing parent(s) if not specified.  The default level is 0, but can be globally overridden by the environment variable `PIPER_VERBOSE`.
 
-See the ["LOGGING AND DEBUGGING"](#logging-and-debugging) section for specifics about debug and verbosity
-levels.
+See the ["LOGGING AND DEBUGGING"](#logging-and-debugging) section for specifics about debug and verbosity levels.
 
 ## INSTANCE ATTRIBUTES
 
@@ -346,6 +313,10 @@ Queue `@data` for processing by the pipeline.
 
 Find and return the segment instance according to `$location`, which can be a label or a path-like hierarchy of labels.  See [injectAfter](#injectafter-location-data) for a detailed description of `$location`.
 
+### \*flush
+
+Process batches until there are no more items pending.
+
 ### has\_children
 
 A boolean indicating whether the instance has any children.
@@ -353,6 +324,10 @@ A boolean indicating whether the instance has any children.
 ### has\_parent
 
 A boolean indicating whether the instance has a parent.
+
+### has\_pending
+
+Returns a boolean indicating whether there are any items that are queued at some level of the segment but have not completed processing.
 
 ### \*is\_exhausted
 
@@ -380,8 +355,7 @@ Returns the number of items that have finished processing and are ready for `deq
 
 # GLOBAL CONFIGURATION
 
-The following global attributes are configurable from the Piper
-import statement.
+The following global attributes are configurable from the Piper import statement.
 
     Ex:
     # Change the default batch_size to 50
@@ -389,8 +363,7 @@ import statement.
 
 ## batch\_size
 
-The default batch size used by pipeline segments which do not have a locally
-defined `batch_size` and do not have a parent segment with a defined `batch_size`.
+The default batch size used by pipeline segments which do not have a locally defined `batch_size` and do not have a parent segment with a defined `batch_size`.
 
 The `batch_size` attribute must be a positive integer.
 
@@ -480,7 +453,8 @@ Prints a debug `$message` to STDERR if the debug level for the segment is > 0.
                 }
             }
             # User-heightened verbosity level
-            $instance->INFO("Data all good!", @$batch) if $instance->verbose > 2;
+            $instance->INFO('Data all good!', @$batch)
+                if $instance->verbose > 2;
             ...
         },
         ...
@@ -491,3 +465,15 @@ Prints a debug `$message` to STDERR if the debug level for the segment is > 0.
 Much of the concept and API for this project was inspired by the work of [Nathaniel Pierce](mailto:nwpierce@gmail.com).
 
 Special thanks to [Tim Heaney](http://oylenshpeegul.typepad.com) for his encouragement and mentorship.
+
+# VERSION
+
+version 0.02
+
+# AUTHOR
+
+Mary Ehlers <ehlers@cpan.org>
+
+# CONTRIBUTOR
+
+Tim Heaney <oylenshpeegul@gmail.com>

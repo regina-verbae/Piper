@@ -15,7 +15,7 @@ use Types::Common::String qw(NonEmptySimpleStr);
 
 use Moo::Role;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 DESCRIPTION
 

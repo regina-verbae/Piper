@@ -17,7 +17,7 @@ use Types::Standard qw(ClassName);
 use Moo;
 use namespace::clean;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
