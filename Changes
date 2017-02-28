@@ -2,5 +2,18 @@ Revision history for Piper
 
 {{$NEXT}}
 
+    [** INCOMPATIBLE CHANGES **]
+
+          - Method eject sends data to parent's drain instead of main drain
+             - Old behavior becomes $instance->main->eject
+          - Method inject sends data to parent's queue instead of main
+             - Old behavior becomes $instance->main->inject
+
+    [ CHANGES ]
+    
+          - Added methods has_pending and flush
+          - Coerce enabled attribute to boolean
+
 0.01      2017-02-20 10:15:01-05:00 America/New_York
+
           - Initial release.
