@@ -468,7 +468,7 @@ Special thanks to [Tim Heaney](http://oylenshpeegul.typepad.com) for his encoura
 
 # VERSION
 
-version 0.02
+version 0.03
 
 # AUTHOR
 
@@ -477,3 +477,11 @@ Mary Ehlers <ehlers@cpan.org>
 # CONTRIBUTOR
 
 Tim Heaney <oylenshpeegul@gmail.com>
+
+# COPYRIGHT AND LICENSE
+
+This software is Copyright (c) 2017 by Mary Ehlers.
+
+This is free software, licensed under:
+
+    The Apache License, Version 2.0, January 2004
