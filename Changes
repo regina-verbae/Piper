@@ -2,6 +2,8 @@ Revision history for Piper
 
 {{$NEXT}}
 
+0.03      2017-02-28 22:15:27-05:00 America/New_York
+
     [ CHANGES ]
 
           - Added LICENSE to POD (thanks @manwar)
