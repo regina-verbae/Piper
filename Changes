@@ -2,6 +2,12 @@ Revision history for Piper
 
 {{$NEXT}}
 
+    [ CHANGES ]
+
+          - Added LICENSE to POD (thanks @manwar)
+
+0.02      2017-02-28 08:56:28-05:00 America/New_York
+
     [** INCOMPATIBLE CHANGES **]
 
           - Method eject sends data to parent's drain instead of main drain
