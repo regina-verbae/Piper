@@ -2,6 +2,11 @@ Revision history for Piper
 
 {{$NEXT}}
 
+    [ CHANGES ]
+
+          - Replaced 'any' in has_pending with short-circuiting for loop
+             - Fixes segfault in Perl versions 10 and 12 (thanks @CPANTesters!)
+
 0.03      2017-02-28 22:15:27-05:00 America/New_York
 
     [ CHANGES ]
