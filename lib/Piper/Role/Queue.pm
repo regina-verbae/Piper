@@ -11,7 +11,7 @@ use warnings;
 
 use Moo::Role;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =head1 DESCRIPTION
 

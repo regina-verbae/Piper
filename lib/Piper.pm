@@ -24,7 +24,7 @@ use overload (
     fallback => 1,
 );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 my $CONFIG;
 

@@ -14,7 +14,7 @@ use Types::Common::Numeric qw(PositiveOrZeroNum);
 
 use Moo::Role;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 #TODO: Look into making this Log::Any-compatible
 
