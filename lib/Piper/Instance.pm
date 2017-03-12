@@ -9,7 +9,7 @@ use v5.10;
 use strict;
 use warnings;
 
-use List::AllUtils qw(any last_value max part sum);
+use List::AllUtils qw(last_value max part sum);
 use List::UtilsBy qw(max_by min_by);
 use Piper::Path;
 use Scalar::Util qw(weaken);
@@ -210,9 +210,15 @@ Returns a boolean indicating whether there are any items that are queued at some
 sub has_pending {
     my ($self) = @_;
 
-    return $self->has_children
-        ? any { $_->has_pending } @{$self->children}
-        : $self->queue->ready;
+    if ($self->has_children) {
+        for my $child (@{$self->children}) {
+            return 1 if $child->has_pending;
+        }
+        return 0;
+    }
+    else {
+        return $self->queue->ready;
+    }
 }
 
 =head2 *dequeue([$num])
