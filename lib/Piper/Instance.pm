@@ -777,7 +777,7 @@ sub pressure {
         return max(map { $_->pressure } @{$self->children});
     }
     else {
-        return $self->pending ? int(100 * $self->pending / $self->batch_size) : 0;
+        return $self->pending ? (int(100 * $self->pending / $self->batch_size) || 1) : 0;
     }
 }
 
